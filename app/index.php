@@ -1,8 +1,8 @@
 <?php
-echo "Cualqueir cosa";
 // Error Handling
 error_reporting(-1);
 ini_set('display_errors', 1);
+
 
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -24,6 +24,9 @@ $dotenv->safeLoad();
 
 // Instantiate App
 $app = AppFactory::create();
+// Set base path
+$app->setBasePath('/app');
+
 
 // Add error middleware
 $app->addErrorMiddleware(true, true, true);
@@ -39,7 +42,7 @@ $app->group('/usuarios', function (RouteCollectorProxy $group) {
   });
 
 $app->get('[/]', function (Request $request, Response $response) {    
-    $response->getBody()->write("Slim Framework 4 PHP");
+    $response->getBody()->write("Slim Framework 4 PHP - Ezequiel Unía");
     return $response;
 
 });
