@@ -103,8 +103,8 @@ class MesaApi extends Mesa implements IApiUsable
 
     public function MetricasMesas($request, $response)
     {
-        $empleado = Mesas::Metricas();
-        Mesas::MostrarMetricas($empleado);
+        $empleado = Mesa::Metricas();
+        Mesa::MostrarMetricas($empleado);
         $payload = json_encode("");
         $response->getBody()->write($payload);
         return $response

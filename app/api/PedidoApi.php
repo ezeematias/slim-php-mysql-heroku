@@ -11,48 +11,32 @@ require_once "./interfaces/IApiUsable.php";
 
 class PedidoApi extends Pedido implements IApiUsable
 {
-    //region ABM
-    public function CargarUno($request, $response, $args)
-    {
-        $ArrayDeParametros = $request->getParsedBody();
-        $arraypedidos = $ArrayDeParametros['pedidos'];
-        $idTemp = 0;
+//region ABM
+public function CargarUno($request, $response, $args)
+{
+    $ArrayDeParametros = $request->getParsedBody();
+    $arraypedidos = $ArrayDeParametros['pedido'];
+    $pedido = new Pedido();
+    $pedido->idComanda = $arraypedidos['idComanda'];
+    $pedido->sector = $arraypedidos['sector'];
+    $pedido->idEmpleado = $arraypedidos['idEmpleado'];
+    $pedido->descripcion = $arraypedidos['descripcion'];
+    $pedido->estado = $arraypedidos['estado'];
+    $pedido->fechaIngresado = $arraypedidos['fechaIngresado'];
+    $pedido->estimacion = $arraypedidos['estimacion'];
+    $pedido->codigo = $arraypedidos['codigo'];
+    $id =    $pedido->InsertarPedido();
 
-        foreach ($arraypedidos as $pedido) {
-            $mipedido = new Pedido();
-            $mipedido->idComanda = $pedido['idComanda'];
-            $mipedido->sector = $pedido['sector'];
-            $mipedido->descripcion = $pedido['descripcion'];
-            $mipedido->estado = $pedido['estado'];           
-            $mipedido->fechaIngresado = $pedido['fechaIngresado'];
-            $idTemp = $pedido['idPedido'];
-            $arrayProducto = $pedido['productos'];
-            foreach ($arrayProducto as $producto) {
-                $consumo = new ProductoConsumido();
-                $consumo->idPedido = $idTemp;
-                $consumo->idProducto = $producto['idProducto'];
-                $consumo->cantidad = $producto['cantidad'];
-                $consumo->CargarUno();
-            }
-        }
-
-        $codigo = $mipedido->InsertarPedido();
-        //Cargo el log
-        if ($codigo) {            
-            $empleadoTomaPedido = Empleado::TraerEmpleado($ArrayDeParametros['empleado']["id"]);
-            $new_log = new Logger();
-            
-            $new_log->idEmpleado = $empleadoTomaPedido->id;
-            $new_log->accion = "Carga pedido";
-            $new_log->InsertarLog();
-            $payload = json_encode(array("mensaje: " => "Se ha ingresado el Pedido, su codigo es ". $codigo, "status" => 200));
-        }else{
-            $payload = json_encode(array("mensaje: " => "No se ha ingresado el Pedido", "status" => 404));
-        }
-        Empleado::LiberarEstadoEmpleado($empleadoTomaPedido->id);
-        $response->getBody()->write($payload);
-        return $response->withHeader('Content-Type', 'application/json');
+    if ($id) {
+        $new_log = new Logger();
+        $new_log->idEmpleado =  $ArrayDeParametros['empleado']['id'];
+        $new_log->accion = "Insertar pedido unia";
+        $new_log->InsertarLog();
     }
+    $payload = json_encode(array("<li>mensaje: " => "", "status" => 200));
+    $response->getBody()->write($payload);
+    return $response->withHeader('Content-Type', 'application/json');    
+}
 
     public function BorrarUno($request, $response, $args)
     {
@@ -105,10 +89,19 @@ class PedidoApi extends Pedido implements IApiUsable
         return $response->withHeader('Content-Type', 'application/json');
     }
 
-    public function TraerTodos($request, $response, $args)
+    public function TraerTodos2($request, $response, $args)
     {
         $lista = Empleado::TraerEmpleados();
         $payload = json_encode(array("Empleados" => Empleado::Listar($lista)));
+        $response->getBody()->write($payload);
+        return $response
+            ->withHeader('Content-Type', 'application/json');
+    }
+
+    public function TraerTodos($request, $response, $args)
+    {
+        $lista = Producto::TraerProductos();
+        $payload = json_encode(Empleado::Listar($lista));
         $response->getBody()->write($payload);
         return $response
             ->withHeader('Content-Type', 'application/json');

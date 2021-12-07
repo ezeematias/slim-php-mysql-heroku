@@ -128,9 +128,14 @@ $app->group('/pedidos', function (RouteCollectorProxy $group) {
   $group->delete('/{codigo}', \PedidoApi::class . ':BorrarUno')->add(\VerificacionMiddleware::class . ':VerificarSocio');    
   $group->put('/{codigo}', \PedidoApi::class . ':ModificarUno')->add(\VerificacionMiddleware::class . ':VerificarMozo');    
   $group->get('/{codigo}', \PedidoApi::class . ':TraerUno')->add(\VerificacionMiddleware::class . ':VerificarMozo');           
-  $group->get('[/]', \PedidoApi::class . ':TraerTodos');
+  $group->get('[/todos]', \PedidoApi::class . ':TraerTodos');
   $group->get('/p/pdf', \FileManagerApi::class . ':PedidoPDF');
   $group->get('/p/csv', \FileManagerApi::class . ':PedidoCSV');                                                                       
 });//->add(\VerificacionMiddleware::class . ':VerificarSocio');
+
+$app->get('[/]', function (Request $request, Response $response) {    
+  $response->getBody()->write("La Comanda - Ezequiel Unía");
+  return $response;
+});
 
 $app->run();
