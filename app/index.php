@@ -53,10 +53,10 @@ $app->addBodyParsingMiddleware();
 $app->post('/login', \UsuarioApi::class . ':LoguearUsuario');
 // Routes
 $app->group('/usuarios', function (RouteCollectorProxy $group) {
-  $group->post('[/]', \UsuarioApi::class . ':CargarUno');                 
+  $group->post('/cargarUno', \UsuarioApi::class . ':CargarUno');                 
   $group->delete('[/{id}]', \UsuarioApi::class . ':BorrarUno'); //Dar de baja
   $group->put('/{id}', \UsuarioApi::class . ':ModificarUno');
-  $group->get('[/]', \UsuarioApi::class . ':TraerTodos');
+  $group->get('/traerTodos', \UsuarioApi::class . ':TraerTodos');
   $group->get('/{usuario}', \UsuarioApi::class . ':TraerUno');
   $group->post('/{id}', \UsuarioApi::class . ':ActivarUno'); //Reactivar
 })->add(\VerificacionMiddleware::class . ':VerificarAdmin')->add(\VerificacionMiddleware::class . ':ValidarToken');
@@ -67,7 +67,7 @@ $app->group('/usuarios', function (RouteCollectorProxy $group) {
 $app->group('/comandas', function (RouteCollectorProxy $group) {
   $group->post('/readcsv', \FileManagerApi::class . ':ReadComandaCSV');
 
-  $group->post('[/]', \ComandaApi::class . ':CargarUno')->add(\VerificacionMiddleware::class . ':VerificarMozo'); //con cliente esperando pedido
+  $group->post('/cargarUno', \ComandaApi::class . ':CargarUno')->add(\VerificacionMiddleware::class . ':VerificarMozo'); //con cliente esperando pedido
   $group->post('/llevar_pedido', \ComandaApi::class . ':LLevarComida')->add(\VerificacionMiddleware::class . ':VerificarMozo'); //con cliente comiendo  
   $group->post('/cobrar', \ComandaApi::class . ':CobrarComanda')->add(\VerificacionMiddleware::class . ':VerificarMozo'); //con cliente pagando                                 //con cliente comiendo
   $group->post('/cerrar', \ComandaApi::class . ':CerrarComanda')->add(\VerificacionMiddleware::class . ':VerificarSocio');
@@ -88,11 +88,11 @@ $app->group('/comandas', function (RouteCollectorProxy $group) {
 
 $app->group('/empleados', function (RouteCollectorProxy $group) {
   $group->get('/metricas', \EmpleadoApi::class . ':MetricasEmpleado')->add(\VerificacionMiddleware::class . ':VerificarAdmin'); 
-  $group->post('[/]', \EmpleadoApi::class . ':CargarUno')->add(\VerificacionMiddleware::class . ':VerificarAdmin');         
+  $group->post('/cargarUno', \EmpleadoApi::class . ':CargarUno')->add(\VerificacionMiddleware::class . ':VerificarAdmin');         
   $group->delete('/{id}', \EmpleadoApi::class . ':BorrarUno')->add(\VerificacionMiddleware::class . ':VerificarAdmin');
   $group->put('/{id}', \EmpleadoApi::class . ':ModificarUno')->add(\VerificacionMiddleware::class . ':VerificarAdmin');
   $group->get('/{id}', \EmpleadoApi::class . ':TraerUno');
-  $group->get('[/]', \EmpleadoApi::class . ':TraerTodos');
+  $group->get('/traerTodos', \EmpleadoApi::class . ':TraerTodos');
   $group->post('/tomar_pedido', \EmpleadoApi::class . ':TomarUnPedido')->add(\VerificacionMiddleware::class . ':VerificarMozo'); //postman EMPLEADO TOMA PEDIDO
   $group->post('/entregar_pedido', \EmpleadoApi::class . ':EntregarUnPedido');  //postman EMPLEADO PREPARA PEDIDO
    $group->get('/e/pdf', \FileManagerApi::class . ':EmpleadoPDF');
@@ -100,22 +100,22 @@ $app->group('/empleados', function (RouteCollectorProxy $group) {
 });
 
 $app->group('/productos', function (RouteCollectorProxy $group) {
-  $group->post('[/]', \ProductoApi::class . ':CargarUno');          // ✓
+  $group->post('/cargarUno', \ProductoApi::class . ':CargarUno');          // ✓
   $group->delete('/{id}', \ProductoApi::class . ':BorrarUno');      // ✓
   $group->put('/{id}', \ProductoApi::class . ':ModificarUno');      // ✓
   $group->get('/{id}', \ProductoApi::class . ':TraerUno');          // ✓
-  $group->get('[/]', \ProductoApi::class . ':TraerTodos');          // ✓
+  $group->get('/traerTodos', \ProductoApi::class . ':TraerTodos');          // ✓
   //Agregar generar pdf
 })->add(\VerificacionMiddleware::class . ':VerificarMozo');
 
 
 $app->group('/mesas', function (RouteCollectorProxy $group) {
   $group->get('/metricas', \MesaApi::class . ':MetricasMesas')->add(\VerificacionMiddleware::class . ':VerificarAdmin'); 
-  $group->post('[/]', \MesaApi::class . ':CargarUno')->add(\VerificacionMiddleware::class . ':VerificarMozo');                // ✓
+  $group->post('/cargarUno', \MesaApi::class . ':CargarUno')->add(\VerificacionMiddleware::class . ':VerificarMozo');                // ✓
   $group->delete('/{codigo}', \MesaApi::class . ':BorrarUno')->add(\VerificacionMiddleware::class . ':VerificarSocio');       // ✓
   $group->put('/{codigo}', \MesaApi::class . ':ModificarUno')->add(\VerificacionMiddleware::class . ':VerificarMozo');        // ✓
   $group->get('/{codigo}', \MesaApi::class . ':TraerUno')->add(\VerificacionMiddleware::class . ':VerificarMozo');            // ✓
-  $group->get('[/]', \MesaApi::class . ':TraerTodos');
+  $group->get('/traerTodos', \MesaApi::class . ':TraerTodos');
   $group->get('/m/pdf', \FileManagerApi::class . ':MesaPDF');
   $group->get('/m/csv', \FileManagerApi::class . ':MesaCSV');                                                                        // ✓
 })->add(\VerificacionMiddleware::class . ':ValidarToken'); //->add(\VerificacionMiddleware::class . ':VerificarMozo');        // ✓
