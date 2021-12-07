@@ -37,21 +37,36 @@ class FileManagerApi extends FileManager
             ->withHeader('Content-Type', 'application/json');
     }
 
+    public function LogoPDF($request, $response, $args)
+    {
+        $pdf = new FPDF();
+        $pdf->AddPage();
+        $pdf->Image("./assets/logo.jpg",20,100,100);
+        $fecha = new DateTime(date("d-m-Y"));
+        $destination = ".\Reportes\\";
+        if (!file_exists($destination)) {
+            mkdir($destination, 0777, true);
+        }
+        $pdf->Output('F', $destination . 'Logo' . "_" . $fecha->format('d-m-Y') . '.pdf');
+        $payload = json_encode(array("mensaje" => 'archivo generado en' . $destination . 'Logo' . "_" . $fecha->format('d-m-Y') . '.pdf'));
+        $response->getBody()->write($payload);
+        return $response
+            ->withHeader('Content-Type', 'application/json');
+    }
+
     public function ComandaPDF($request, $response, $args)
     {
         echo "<br>" . "Comanda" . "<br>";
         $lista = Comanda::TraerComandas();
         $pdf = new FPDF();
         $pdf->AddPage();
+        $pdf->Image("./assets/logo.jpg",20,10,50);
         $pdf->SetFont('Arial', '', 10);
         //Titulo
         $pdf->Cell(80);
         $pdf->SetDrawColor(198, 67, 39);
         $pdf->Cell(30, 10, 'Comandas', 0, 0, 'C');
-
-        $pdf->Ln(20);
-
-       
+        $pdf->Ln(60);        
         $pdf->Cell(20, 10, 'ID', 1);
         $pdf->Cell(20, 10, 'Codigo', 1);
         $pdf->Cell(20, 10, 'Cliente', 1);
@@ -66,8 +81,7 @@ class FileManagerApi extends FileManager
             $pdf->Cell(20, 10, $comanda->nombreCliente, 1);
             $pdf->Cell(20, 10, $comanda->importe, 1);
             $pdf->Cell(20, 10, $comanda->idMesa, 1);
-            $pdf->Cell(20, 10, $comanda->foto, 1);
-            //No envio la ruta de la foto por que ocupa mucho lugar en el pdf
+            $pdf->Cell(20, 10, $comanda->foto, 1);            
             $pdf->Ln();
         }
 

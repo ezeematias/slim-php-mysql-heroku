@@ -146,7 +146,7 @@ class Pedido
     public static function CobrarPedidos($idComanda)    {
         $objetoAccesoDato = AccesoDatos::dameUnObjetoAcceso();
         $consulta = $objetoAccesoDato->RetornarConsulta(
-        "UPDATE pedidos SET estado = 'COBRADO', fechaEntregado = :fechaEntregado WHERE idComanda = :idComanda limit 1"
+        "UPDATE pedidos SET estado = 'COBRADO', fechaEntregado = :fechaEntregado WHERE idComanda = :idComanda"
         );
         $consulta->bindValue(':idComanda', $idComanda, PDO::PARAM_STR);
         $consulta->bindValue(':fechaEntregado', date("Y-m-d"), PDO::PARAM_STR);
@@ -367,6 +367,22 @@ class Pedido
         "fechaIngresado: " . $Producto->fechaIngresado . "<br>" .
         "fechaEntregado: " . $Producto->fechaEntregado . "<br>";
         "demoro: " . $Producto->demoro . "<br>";  
+    }
+
+    public static function Mostrar($array){
+        foreach ($array as $key) {
+        echo
+        "<ul>" .
+        "codigo mesa: ".$key['codigo_mesa'] . "<br>" .
+        "cliente: " . $key['nombre_cliente'] . "<br>" .
+        "mesa: " . $key['mesa'] . "<br>" .
+        "foto: " . $key['foto'] . "<br>" .
+        "pedido n°: " . $key['numero_pedido'] . "<br>" .
+        "estado: " . $key['estado'] . "<br>" .
+        "codigo pedido: " . $key['codigo_pedido'] . "<br>" .
+        "codigo mesa: " . $key['codigo_mesa'] . "<br>" .
+        "estimacion: " . $key['estimacion'] ." minutos ". "</ul>";
+        }
     }
 } //clase
 

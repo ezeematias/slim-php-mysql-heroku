@@ -79,7 +79,7 @@ class VerificacionMiddleware
     public function VerificarSocio($request, $handler)
     {
         $parametros = $request->getParsedBody();
-        $usuario = Usuario::obtenerUsuario($parametros['socio']['user']);
+        $usuario = Usuario::obtenerUsuario($parametros['socio']['usuario']);
         $response = $handler->handle($request); 
         if ($usuario->perfil == "socio" && $usuario->fechaBaja== NULL)
          {

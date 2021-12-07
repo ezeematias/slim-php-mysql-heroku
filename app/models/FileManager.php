@@ -5,9 +5,7 @@ class FileManager
     public static function guardarTxt(string $path, string $textoAEscribir)
     {
         $archivo = fopen($path, 'a+');
-
         fwrite($archivo, $textoAEscribir . PHP_EOL);
-
         return fclose($archivo);
     }
 
@@ -15,24 +13,18 @@ class FileManager
     public static function leerTxt(string $fileName)
     {
         $archivoTxt = array();
-
         $archivo = fopen($fileName, 'r');
-
         if ($archivo != null) {
             while (!feof($archivo)) {
                 array_push($archivoTxt, str_replace(PHP_EOL, '', fgets($archivo)));
             }
         }
-
         fclose($archivo);
-
         return $archivoTxt;
     }
 
     public static function BringArray(string $fileName = '')
     {
-
-        //Traer array
         $linea = "";
         $datos = "";
         $lista = array();
@@ -89,14 +81,10 @@ class FileManager
 
     public static function leerJson(string $path)
     {
-
         $json = null;
-
         if (!empty($path) && file_exists($path)) {
             $archivo = fopen($path, 'r');
             $fileSize = filesize($path);
-
-
             if ($fileSize > 0) {
                 $datos = fread($archivo, $fileSize);
                 $json = json_decode($datos);
@@ -104,13 +92,10 @@ class FileManager
                 $readFile = '{}';
                 $json = json_decode($readFile);
             }
-
             fclose($archivo);
         }
-
         return $json;
     }
-
 
     public static function serializar($objeto, string $path)
     {
@@ -120,10 +105,7 @@ class FileManager
             } else {
                 $array = array();
             }
-
-
             array_push($array, $objeto);
-
             $archivo = fopen($path, 'w');
             fwrite($archivo, serialize($array));
 
@@ -133,21 +115,15 @@ class FileManager
         }
     }
 
-
     public static function deserializar(string $path)
     {
-
-
         if (!empty($path) && file_exists($path)) {
             $archivo = fopen($path, 'r');
             $fileSize = filesize($path);
-
-
             if ($fileSize > 0) {
                 $datos = fread($archivo, $fileSize);
                 $array = unserialize($datos);
             }
-
             fclose($archivo);
         } else {
             echo "Error. La ruta esta vacia o el archivo no existe.";

@@ -167,7 +167,7 @@ class Comanda
         select c.codigo as codigo , c.nombreCliente as cliente,m.id as mesa, c.foto,
             p.id as pedido, p.estado, p.estimacion, p.codigo as codigo_pedido
         from comandas as c 
-        left join mesas as m on c.codigo = m.codigo 
+        left join mesas as m on c.idMesa = m.id 
         left join pedidos as p on c.id = p.idComanda
         where c.codigo = :codigo");
         $consulta->bindValue(':codigo', $codigo, PDO::PARAM_STR);

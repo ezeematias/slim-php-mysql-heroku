@@ -38,8 +38,9 @@ class MesaApi extends Mesa implements IApiUsable
     {
         $ArrayDeParametros = $request->getParsedBody();
         $codigo = $args['codigo'];
-        $cantidadDeBorrados = Mesa::BorrarMesa($codigo);
-
+        $mimesa = new Mesa();
+        $mimesa->codigo = $codigo;
+        $cantidadDeBorrados = $mimesa->BorrarMesa();
         if ($cantidadDeBorrados > 0) {
             $new_log = new Logger();
             $new_log->idEmpleado = $ArrayDeParametros['empleado'];
@@ -57,11 +58,10 @@ class MesaApi extends Mesa implements IApiUsable
     {
         $ArrayDeParametros = $request->getParsedBody();
         $arraymodificar = $ArrayDeParametros['modificar'];
-        $codigo = $args['codigo'];
-
         $miMesa = new Mesa();
         $miMesa->estado = $arraymodificar['estado'];
-        $filasAfectadas = $miMesa->ModificarMesa($codigo);
+        $miMesa->codigo = $arraymodificar['codigo'];
+        $filasAfectadas = $miMesa->ModificarMesa();
 
         if ($filasAfectadas > 0) {
             $new_log = new Logger();
@@ -72,7 +72,6 @@ class MesaApi extends Mesa implements IApiUsable
         }else {
             $payload = json_encode(array("<li>mensaje: " => "Error al modificar la mesa", "status" => 400));
         }
-
 
         $response->getBody()->write($payload);
         return $response->withHeader('Content-Type', 'application/json');
@@ -103,7 +102,7 @@ class MesaApi extends Mesa implements IApiUsable
 
     public function MetricasMesas($request, $response)
     {
-        $empleado = Mesa::Metricas();
+        $empleado = Mesa::Metricas("","");
         Mesa::MostrarMetricas($empleado);
         $payload = json_encode("");
         $response->getBody()->write($payload);

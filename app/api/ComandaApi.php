@@ -29,16 +29,16 @@ class ComandaApi extends Comanda implements IApiUsable
         $comanda->nombreCliente = $arraycomanda['nombreCliente'];
 
         $mesaLibre = Mesa::TraerMesaCerrada();
-      
+        
         if($mesaLibre){
             //Creo nuevo codigo para comanda y mesa
             $nuevoCodigo = substr(base_convert(sha1(uniqid(mt_rand())), 16, 36), 0, 5);
 
             //Cargo informacion a la mesa
-            $mesaLibre->codigo = $nuevoCodigo;
             $mesaLibre->estado = 'con cliente esperando pedido';
             $mesaLibre->ModificarMesa();
-            //A la comanda le envio esta mesa.
+            $mesaLibre->codigo = $nuevoCodigo;
+            //A la comanda le envio esta mesa. 
             $comanda->idMesa = $mesaLibre->id;
        
             $archivos != null ?  $comanda->AgregarFoto($archivos, $nuevoCodigo) : $comanda->SetFoto(null);
@@ -76,7 +76,7 @@ class ComandaApi extends Comanda implements IApiUsable
         $codigo = $args['codigo'];
         $comanda = Comanda::TraerComanda($codigo);
         $comanda->BorrarComanda();
-
+        
         Pedido::CerrarPedidos($comanda->id);
         $cerrarMesa = Mesa::TraerMesa($comanda->codigo);
         $cerrarMesa->estado = 'cerrada';
@@ -85,7 +85,7 @@ class ComandaApi extends Comanda implements IApiUsable
         if ($mesaCerrada) {
             $new_log = new Logger();
             $arrayUsuario = $ArrayDeParametros['usuario'];
-            $esAdmin = Usuario::obtenerUsuario($arrayUsuario['user']);
+            $esAdmin = Usuario::obtenerUsuario($arrayUsuario['usuario']);
           
             if ($esAdmin) {
                 $new_log->idEmpleado = $esAdmin->id;
@@ -197,7 +197,7 @@ class ComandaApi extends Comanda implements IApiUsable
         $ArrayDeParametros = $request->getParsedBody();
         $arrayencuesta = $ArrayDeParametros['encuesta'];
         $arrayUsuario = $ArrayDeParametros['socio'];
-        $esAdmin = Usuario::obtenerUsuario($arrayUsuario['user']);
+        $esAdmin = Usuario::obtenerUsuario($arrayUsuario['usuario']);
 
         //traer mesas con cliente pagando
         $mesa = Mesa::TraerMesasConClientePagando();
@@ -295,7 +295,7 @@ class ComandaApi extends Comanda implements IApiUsable
         $ArrayDeParametros = $request->getParsedBody();
         $arraydatos = $ArrayDeParametros['datos'];
         
-        $pedido = Pedido::TraePedidoPorId($arraydatos['idPedido']);
+        $pedido = Pedido::TraerPedidoPorId($arraydatos['idPedido']);
         Pedido::Mostrar($pedido);
         $encuesta = Encuesta::TraerEncuestaPorMesa($arraydatos['mesa']);
         $encuesta->__toString();

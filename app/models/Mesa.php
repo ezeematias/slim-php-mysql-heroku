@@ -28,17 +28,17 @@ class Mesa
         $nuevoCodigo = substr(base_convert(sha1(uniqid(mt_rand())), 16, 36), 0, 5);
         $objetoAccesoDato = AccesoDatos::dameUnObjetoAcceso();
         $consulta = $objetoAccesoDato->RetornarConsulta(
-            "INSERT into mesas (codigo,estado)values(:codigo,:estado)"
+            "INSERT into mesas (codigo,estado,available)values(:codigo,:estado,:available)"
         );
         $consulta->bindValue(':codigo', $nuevoCodigo, PDO::PARAM_STR);
         $consulta->bindValue(':estado', $this->estado, PDO::PARAM_STR);
+        $consulta->bindValue(':available',1, PDO::PARAM_INT);
         $consulta->execute();
         return $nuevoCodigo;
     }
 
     public function BorrarMesa()
     {
-
         $objetoAccesoDato = AccesoDatos::dameUnObjetoAcceso();
         $consulta = $objetoAccesoDato->RetornarConsulta(
             "update mesas 
@@ -49,19 +49,15 @@ class Mesa
         return $consulta->rowCount();
     }
 
-    /**
-     * asdasdasdasdasdasd
-     */
     public function ModificarMesa()
     {
         $objetoAccesoDato = AccesoDatos::dameUnObjetoAcceso();
         $consulta = $objetoAccesoDato->RetornarConsulta("
             update mesas 
-            set codigo=:codigo,estado=:estado
-            WHERE id=:id");
+            set estado=:estado
+            WHERE codigo=:codigo");
         $consulta->bindValue(':codigo', trim($this->codigo), PDO::PARAM_STR);
         $consulta->bindValue(':estado', $this->estado, PDO::PARAM_STR);
-        $consulta->bindValue(':id', $this->id, PDO::PARAM_STR);
         $consulta->execute();
         return $consulta->rowCount();
     }
