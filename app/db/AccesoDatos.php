@@ -1,4 +1,6 @@
 <?php
+use Slim\Psr7\Environment;
+
 class AccesoDatos
 {
     private static $objAccesoDatos;
@@ -15,7 +17,7 @@ class AccesoDatos
         }
     }
 
-    public static function obtenerInstancia()
+    public static function dameUnObjetoAcceso()
     {
         if (!isset(self::$objAccesoDatos)) {
             self::$objAccesoDatos = new AccesoDatos();
@@ -23,16 +25,17 @@ class AccesoDatos
         return self::$objAccesoDatos;
     }
 
-    public function prepararConsulta($sql)
+    public function RetornarConsulta($sql)
     {
         return $this->objetoPDO->prepare($sql);
     }
 
-    public function obtenerUltimoId()
+    public function RetornarUltimoIdInsertado()
     {
         return $this->objetoPDO->lastInsertId();
     }
 
+    // Evita que el objeto se pueda clonar
     public function __clone()
     {
         trigger_error('ERROR: La clonación de este objeto no está permitida', E_USER_ERROR);
