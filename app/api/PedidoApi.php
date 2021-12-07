@@ -105,7 +105,7 @@ public function CargarUno($request, $response, $args)
     {
         $empleado = Pedido::Metricas();
 
-        Pedido::MostrarMetricas($empleado);
+        //Pedido::MostrarMetricas($empleado);
         //	print_r($empleado);
 
 
