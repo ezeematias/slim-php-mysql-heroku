@@ -89,19 +89,11 @@ public function CargarUno($request, $response, $args)
         return $response->withHeader('Content-Type', 'application/json');
     }
 
-    public function TraerTodos2($request, $response, $args)
-    {
-        $lista = Empleado::TraerEmpleados();
-        $payload = json_encode(array("Empleados" => Empleado::Listar($lista)));
-        $response->getBody()->write($payload);
-        return $response
-            ->withHeader('Content-Type', 'application/json');
-    }
-
     public function TraerTodos($request, $response, $args)
     {
-        $lista = Producto::TraerProductos();
-        $payload = json_encode(Empleado::Listar($lista));
+        $lista = Pedido::TraerTodosLosPedidos();
+        Pedido::Listar($lista);
+        $payload = json_encode(array("mensaje: " => "Ok", "status" => 200));
         $response->getBody()->write($payload);
         return $response
             ->withHeader('Content-Type', 'application/json');

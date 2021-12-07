@@ -120,20 +120,18 @@ $app->group('/mesas', function (RouteCollectorProxy $group) {
   $group->get('/m/csv', \FileManagerApi::class . ':MesaCSV');                                                                        // ✓
 })->add(\VerificacionMiddleware::class . ':ValidarToken'); //->add(\VerificacionMiddleware::class . ':VerificarMozo');        // ✓
 
-
-
 $app->group('/pedidos', function (RouteCollectorProxy $group) {
   $group->get('/metricas', \PedidoApi::class . ':MetricasEmpleado')->add(\VerificacionMiddleware::class . ':VerificarAdmin'); 
   $group->post('/cargar', \PedidoApi::class . ':CargarUno')->add(\VerificacionMiddleware::class . ':VerificarMozo');               // ✓
   $group->delete('/{codigo}', \PedidoApi::class . ':BorrarUno')->add(\VerificacionMiddleware::class . ':VerificarSocio');    
   $group->put('/{codigo}', \PedidoApi::class . ':ModificarUno')->add(\VerificacionMiddleware::class . ':VerificarMozo');    
   $group->get('/{codigo}', \PedidoApi::class . ':TraerUno')->add(\VerificacionMiddleware::class . ':VerificarMozo');           
-  $group->get('[/todos]', \PedidoApi::class . ':TraerTodos');
+  $group->get('[/]', \PedidoApi::class . ':TraerTodos');
   $group->get('/p/pdf', \FileManagerApi::class . ':PedidoPDF');
   $group->get('/p/csv', \FileManagerApi::class . ':PedidoCSV');                                                                       
 });//->add(\VerificacionMiddleware::class . ':VerificarSocio');
 
-$app->get('[/]', function (Request $request, Response $response) {    
+$app->get('/test', function (Request $request, Response $response) {    
   $response->getBody()->write("La Comanda - Ezequiel Unía");
   return $response;
 });

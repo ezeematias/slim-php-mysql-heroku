@@ -5,7 +5,6 @@ require_once "./models/ProductoConsumido.php";
 
 class Pedido
 {
-
     public $id;
     public $idComanda;
     public $sector;
@@ -18,8 +17,8 @@ class Pedido
     public $fechaEntregado;
     public $demoro;
 
-    //region Getters and Setters
 
+    //region Getters and Setters
     public function GetIdComanda() {
         return $this->idComanda;
     }
@@ -237,23 +236,6 @@ class Pedido
         return $pedido;
     }
 
-    //mostrar foreach key value
-    public static function Mostrar($array){
-        foreach ($array as $key) {
-        echo
-        "<ul>" .
-        "codigo mesa: ".$key['codigo_mesa'] . "<br>" .
-        "cliente: " . $key['nombre_cliente'] . "<br>" .
-        "mesa: " . $key['mesa'] . "<br>" .
-        "foto: " . $key['foto'] . "<br>" .
-        "pedido n°: " . $key['numero_pedido'] . "<br>" .
-        "estado: " . $key['estado'] . "<br>" .
-        "codigo pedido: " . $key['codigo_pedido'] . "<br>" .
-        "codigo mesa: " . $key['codigo_mesa'] . "<br>" .
-        "estimacion: " . $key['estimacion'] ." minutos ". "</ul>";
-        }
-    }
-
     //traer todos los pedidos
     public static function TraerTodosLosPedidos(){
         $objetoAccesoDato = AccesoDatos::dameUnObjetoAcceso();
@@ -347,7 +329,44 @@ class Pedido
         return $listaAnalytics;
     }
 
-   
+    public static function Listar($lista)
+    {
+        foreach ($lista as $obj) {          
+            echo Pedido::MostrarDatos($obj);
+        }
+    }
 
+    public function toString(): String
+    {
+        return
+            "<ul>" .
+            "idComanda: ".$this->idComanda . "<br>" .
+            "sector: " . $this->sector . "<br>" .
+            "idEmpleado: " . $this->idEmpleado . "<br>" .
+            "descripcion: " . $this->descripcion . "<br>" .
+            "estado: " . $this->estado . "<br>" .
+            "estimacion: " . $this->estimacion . "<br>" .
+            "codigo: " . $this->codigo . "<br>" .
+            "fechaIngresado: " . $this->fechaIngresado . "<br>" .
+            "fechaEntregado: " . $this->fechaEntregado . "<br>";
+            "demoro: " . $this->demoro . "</ul>";   
+            "<ul>";
+    }
+
+    public static function MostrarDatos($Producto)
+    {
+        return
+        "<br>" .    
+        "idComanda: ".$Producto->idComanda . "<br>" .
+        "sector: " . $Producto->sector . "<br>" .
+        "idEmpleado: " . $Producto->idEmpleado . "<br>" .
+        "descripcion: " . $Producto->descripcion . "<br>" .
+        "estado: " . $Producto->estado . "<br>" .
+        "estimacion: " . $Producto->estimacion . "<br>" .
+        "codigo: " . $Producto->codigo . "<br>" .
+        "fechaIngresado: " . $Producto->fechaIngresado . "<br>" .
+        "fechaEntregado: " . $Producto->fechaEntregado . "<br>";
+        "demoro: " . $Producto->demoro . "<br>";  
+    }
 } //clase
 
