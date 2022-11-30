@@ -18,7 +18,7 @@ class PDF
         $pdf->Cell(60,4,'Unía',0,1,'C');
         $pdf->Cell(40);
         $pdf->SetFont('Helvetica','',8);
-        $pdf->Cell(60,4,'CUIL: 27954188715',0,1,'C');
+        $pdf->Cell(60,4,'CUIL: 20-35019857-2',0,1,'C');
         $pdf->Ln(5);
 
         $pdf->SetFont('Arial', '', 7);
