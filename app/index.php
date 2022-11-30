@@ -1,9 +1,8 @@
 <?php
-// Error Handling
+// Error Handling 
+// Commit
 error_reporting(-1);
-ini_set('display_errors', 1);
-
-use Illuminate\Support\Facades\Route;
+ini_set('display_errors', 1);      
 
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -14,125 +13,154 @@ use Slim\Routing\RouteContext;
 
 require __DIR__ . '/../vendor/autoload.php';
 
-require_once './db/AccesoDatos.php';
-require_once './middlewares/VerificacionMiddleware.php';
+include_once './api/UsuarioAPI.php';
+include_once './api/ProductoAPI.php';
+include_once './api/MesaAPI.php';
+include_once './api/PedidoAPI.php';
+include_once './api/PedidoProductoAPI.php';
+include_once './api/EncuestaAPI.php';
+include_once './api/SectorAPI.php';
+include_once './api/TipoUsuarioAPI.php';
+include_once './api/ReportesAPI.php';
 
-require_once './api/UsuarioApi.php';
-require_once './api/EmpleadoApi.php';
-require_once './api/ProductoApi.php';
-require_once './api/MesaApi.php';
-require_once './api/PedidoApi.php';
-require_once './api/ComandaApi.php';
-require_once './api/FileManagerApi.php';
+
+include_once './db/AccesoDatos.php';
+include_once './middlewares/UsuarioMW.php';
 
 
-// Load ENV
-$dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
-$dotenv->safeLoad();
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__); 
 
-// Instantiate App
+$dotenv->load();
+
 $app = AppFactory::create();
-// Set base path
-$app->setBasePath('/app');
-
-/*
-ME QUEDO CON ESTE
-php -S localhost:80 -t app
-composer update
-composer require firebase/php-jwt
-composer require fpdf/fpdf
- */
-
-// Add error middleware
 $app->addErrorMiddleware(true, true, true);
 
-// Add parse body
-$app->addBodyParsingMiddleware();
-
-// Realiza el login y genera un token
-$app->post('/login', \UsuarioApi::class . ':LoguearUsuario');
-// Routes
-$app->group('/usuarios', function (RouteCollectorProxy $group) {
-  $group->post('/cargarUno', \UsuarioApi::class . ':CargarUno');                 
-  $group->delete('[/{id}]', \UsuarioApi::class . ':BorrarUno'); 
-  $group->put('/{id}', \UsuarioApi::class . ':ModificarUno');
-  $group->get('[/]', \UsuarioApi::class . ':TraerTodos');
-  $group->get('/{usuario}', \UsuarioApi::class . ':TraerUno');
-  $group->post('/{id}', \UsuarioApi::class . ':ActivarUno'); 
-})->add(\VerificacionMiddleware::class . ':VerificarAdmin')->add(\VerificacionMiddleware::class . ':ValidarToken');
-
-/**
- * Terminado, añadir la validacion de token?
- */
-$app->group('/comandas', function (RouteCollectorProxy $group) {
-  $group->post('/readcsv', \FileManagerApi::class . ':ReadComandaCSV');
-  $group->post('[/]', \ComandaApi::class . ':CargarUno')->add(\VerificacionMiddleware::class . ':VerificarMozo'); 
-  $group->post('/llevar_pedido', \ComandaApi::class . ':LLevarComida')->add(\VerificacionMiddleware::class . ':VerificarMozo');  
-  $group->post('/cobrar', \ComandaApi::class . ':CobrarComanda')->add(\VerificacionMiddleware::class . ':VerificarMozo');                             
-  $group->post('/cerrar', \ComandaApi::class . ':CerrarComanda')->add(\VerificacionMiddleware::class . ':VerificarMozo')->add(\VerificacionMiddleware::class . ':VerificarSocio');
-  $group->delete('/{codigo}', \ComandaApi::class . ':BorrarUno')->add(\VerificacionMiddleware::class . ':VerificarSocio'); 
-  $group->post('/modificar/{codigo}', \ComandaApi::class . ':ModificarUno')->add(\VerificacionMiddleware::class . ':VerificarMozo');
-  //-- Consultas
-  $group->post('/completarEncuesta', \ComandaApi::class . ':CompletarEncuesta');
-  $group->post('/comentarios', \ComandaApi::class . ':VerComentarios')->add(\VerificacionMiddleware::class . ':VerificarSocio');
-  $group->post('/mesaMasUsada', \ComandaApi::class . ':VerMesaMasUsada')->add(\VerificacionMiddleware::class . ':VerificarSocio');
-
-  $group->get('/ver/{codigo}/{npedido}', \ComandaApi::class . ':VerMisPedidos');
-  $group->get('/traerUno/{codigo}', \ComandaApi::class . ':TraerUno');
-  $group->get('[/]', \ComandaApi::class . ':TraerTodos');
-  $group->get('/c/pdf', \FileManagerApi::class . ':ComandaPDF');
-  $group->get('/l/pdf', \FileManagerApi::class . ':LogoPDF');
-  $group->get('/c/csv', \FileManagerApi::class . ':ComandaCSV');
-});   
-
-$app->group('/empleados', function (RouteCollectorProxy $group) {
-  $group->get('/metricas', \EmpleadoApi::class . ':MetricasEmpleado')->add(\VerificacionMiddleware::class . ':VerificarAdmin'); 
-  $group->post('/cargarUno', \EmpleadoApi::class . ':CargarUno')->add(\VerificacionMiddleware::class . ':VerificarAdmin');         
-  $group->delete('/{id}', \EmpleadoApi::class . ':BorrarUno')->add(\VerificacionMiddleware::class . ':VerificarAdmin');
-  $group->put('/{id}', \EmpleadoApi::class . ':ModificarUno')->add(\VerificacionMiddleware::class . ':VerificarAdmin');
-  $group->get('/{id}', \EmpleadoApi::class . ':TraerUno');
-  $group->get('[/]', \EmpleadoApi::class . ':TraerTodos');
-  $group->post('/tomar_pedido', \EmpleadoApi::class . ':TomarUnPedido')->add(\VerificacionMiddleware::class . ':VerificarMozo'); //postman EMPLEADO TOMA PEDIDO
-  $group->post('/entregar_pedido', \EmpleadoApi::class . ':EntregarUnPedido');  //postman EMPLEADO PREPARA PEDIDO
-   $group->get('/e/pdf', \FileManagerApi::class . ':EmpleadoPDF');
-   $group->get('/e/csv', \FileManagerApi::class . ':EmpleadoCSV');
-});
-
-$app->group('/productos', function (RouteCollectorProxy $group) {
-  $group->post('/cargarUno', \ProductoApi::class . ':CargarUno');          
-  $group->delete('/{id}', \ProductoApi::class . ':BorrarUno');      
-  $group->put('/{id}', \ProductoApi::class . ':ModificarUno');      
-  $group->get('/{id}', \ProductoApi::class . ':TraerUno');          
-  $group->get('[/]', \ProductoApi::class . ':TraerTodos');          
-  //Agregar generar pdf
-})->add(\VerificacionMiddleware::class . ':VerificarMozo');
-
-$app->group('/mesas', function (RouteCollectorProxy $group) {
-  $group->get('/metricas', \MesaApi::class . ':MetricasMesas')->add(\VerificacionMiddleware::class . ':VerificarAdmin'); 
-  $group->post('[/]', \MesaApi::class . ':CargarUno')->add(\VerificacionMiddleware::class . ':VerificarMozo');               
-  $group->delete('/{codigo}', \MesaApi::class . ':BorrarUno')->add(\VerificacionMiddleware::class . ':VerificarSocio');      
-  $group->put('/modificar', \MesaApi::class . ':ModificarUno')->add(\VerificacionMiddleware::class . ':VerificarMozo');      
-  $group->get('/{codigo}', \MesaApi::class . ':TraerUno')->add(\VerificacionMiddleware::class . ':VerificarMozo');           
-  $group->get('[/]', \MesaApi::class . ':TraerTodos');
-  $group->get('/m/pdf', \FileManagerApi::class . ':MesaPDF');
-  $group->get('/m/csv', \FileManagerApi::class . ':MesaCSV');                                                                        // ✓
-})->add(\VerificacionMiddleware::class . ':ValidarToken'); //->add(\VerificacionMiddleware::class . ':VerificarMozo');        // ✓
-
-
-$app->group('/pedidos', function (RouteCollectorProxy $group) {
- $group->get('/metricas', \PedidoApi::class . ':MetricasEmpleado')->add(\VerificacionMiddleware::class . ':VerificarAdmin'); 
-  $group->post('/cargar', \PedidoApi::class . ':CargarUno')->add(\VerificacionMiddleware::class . ':VerificarMozo');               // ✓
- $group->delete('/{codigo}', \PedidoApi::class . ':BorrarUno')->add(\VerificacionMiddleware::class . ':VerificarSocio');    
- $group->put('/{codigo}', \PedidoApi::class . ':ModificarUno')->add(\VerificacionMiddleware::class . ':VerificarMozo');    
- $group->get('/{codigo}', \PedidoApi::class . ':TraerUno')->add(\VerificacionMiddleware::class . ':VerificarMozo');           
-  $group->get('[/]', \PedidoApi::class . ':TraerTodos');
- $group->get('/p/pdf', \FileManagerApi::class . ':PedidoPDF');
- $group->get('/p/csv', \FileManagerApi::class . ':PedidoCSV');                                                                       
-});//->add(\VerificacionMiddleware::class . ':VerificarSocio');
-
 $app->get('[/]', function (Request $request, Response $response) {    
-  $response->getBody()->write("La Comanda - Ezequiel Unía");
+  $response->getBody()->write("Comanda-PHP || Final");
   return $response;
+
 });
+
+$app->post('/empleados/login[/]', \UsuarioAPI::class . ':Login');  
+
+//Sector
+$app->group('/sector', function (RouteCollectorProxy $group) 
+{
+  //ABM
+  $group->post('/alta[/]', \SectorAPI::class . ':Alta');
+  $group->post('/modificacion[/]', \SectorAPI::class . ':Modificacion');
+  $group->delete('/baja/{id}[/]', \SectorAPI::class . ':Baja');
+  $group->get('/lista[/]', \SectorAPI::class . ':Listar');  
+});
+
+//Tipo de usuario
+$app->group('/tipousuario', function (RouteCollectorProxy $group) 
+{
+  //ABM
+  $group->post('/alta[/]', \TipoUsuarioAPI::class . ':Alta');
+  $group->post('/modificacion[/]', \TipoUsuarioAPI::class . ':Modificacion');
+  $group->delete('/baja/{id}[/]', \TipoUsuarioAPI::class . ':Baja');
+  $group->get('/lista[/]', \TipoUsuarioAPI::class . ':Listar'); 
+}); 
+
+//Mesa
+$app->group('/mesa', function (RouteCollectorProxy $group) 
+{
+  //ABM
+  $group->post('/alta[/]', \MesaAPI::class . ':Alta'); 
+  $group->delete('/baja/{id}[/]', \MesaAPI::class . ':Baja');
+  $group->post('/modificacion[/]', \MesaAPI::class . ':Modificacion'); 
+  $group->get('/lista[/]', \MesaAPI::class . ':Listar'); 
+  //Import/Export
+  $group->get('/export[/]', \MesaAPI::class . ':ExportarTabla');  
+  $group->post('/import[/]', \MesaAPI::class . ':ImportarTabla');  
+});
+
+//Usuarios
+$app->group('/empleados', function (RouteCollectorProxy $group) 
+{
+  //ABM
+  $group->post('/alta[/]', \UsuarioAPI::class . ':Alta');
+  $group->delete('/baja/{id}[/]', \UsuarioAPI::class . ':Baja');
+  $group->post('/modificacion[/]', \UsuarioAPI::class . ':Modificacion'); 
+  $group->get('/lista[/]', \UsuarioAPI::class . ':Listar');  
+});
+
+//Productos
+$app->group('/productos', function (RouteCollectorProxy $group) 
+{
+  $group->post('/alta[/]', \ProductoAPI::class . ':Alta'); 
+  $group->delete('/baja/{id}[/]', \ProductoAPI::class . ':Baja');
+  $group->post('/modificacion[/]', \ProductoAPI::class . ':Modificacion');  
+  $group->get('/lista[/]', \ProductoAPI::class . ':Listar');  
+});
+
+//Reportes
+$app->group('/reportes', function (RouteCollectorProxy $group) 
+{
+  $group->get('/demorapedidoscerrados[/]', \ReportesAPI::class . ':DemoraPedidosCerrados');  
+  $group->get('/estadomesas[/]', \ReportesAPI::class . ':EstadoMesas');  
+  $group->get('/mejorescomentarios[/]', \ReportesAPI::class . ':MejoresComentarios');  
+  $group->get('/mesamasusada[/]', \ReportesAPI::class . ':MesaMasUsada'); 
+})
+  ->add(\UsuarioMW::class. ':ValidarSocio')
+  ->add(\UsuarioMW::class. ':ValidarToken');
+$app->post('/reportes/demorapedidomesa[/]', \ReportesAPI::class . ':DemoraPedidoMesa'); 
+
+//Pedido
+$app->group('/pedido', function (RouteCollectorProxy $group) 
+{
+  //ABM
+  $group->post('/alta[/]', \PedidoAPI::class . ':Alta');
+  $group->delete('/baja/{id}[/]', \PedidoAPI::class . ':Baja');
+  $group->post('/modificacion[/]', \PedidoAPI::class . ':Modificacion');
+  //Subir Foto
+  $group->post('/subirfoto[/]', \PedidoAPI::class . ':SubirFoto');
+  //Manejo del pedido
+  $group->get('/paraservir[/]', \ReportesAPI::class . ':PedidoProductoListoParaServir'); 
+  $group->post('/comiendo[/]', \PedidoAPI::class . ':PasarAComiendo'); 
+  $group->post('/pagando[/]', \PedidoAPI::class . ':PasarAPagando'); 
+})
+  ->add(\UsuarioMW::class. ':ValidarMozo')
+  ->add(\UsuarioMW::class. ':ValidarToken');
+
+$app->get('/pedido/lista[/]', \PedidoAPI::class . ':Listar');
+
+//Cerrar pedido
+$app->post('/pedido/cerrar[/]', \PedidoAPI::class . ':CerrarPedido') 
+  ->add(\UsuarioMW::class. ':ValidarSocio')
+  ->add(\UsuarioMW::class. ':ValidarToken');
+
+//Listado de pedidos activos
+$app->get('/pedido/listaBarra[/]', \PedidoProductoAPI::class . ':ListarPedidosBarra')
+  ->add(\UsuarioMW::class. ':ValidarBartender')
+  ->add(\UsuarioMW::class. ':ValidarToken');  
+$app->get('/pedido/listaChoperas[/]', \PedidoProductoAPI::class . ':ListarPedidosChoperas')
+  ->add(\UsuarioMW::class. ':ValidarCervecero')
+  ->add(\UsuarioMW::class. ':ValidarToken');;  
+$app->get('/pedido/listaCocina[/]', \PedidoProductoAPI::class . ':ListarPedidosCocina')
+  ->add(\UsuarioMW::class. ':ValidarCocinero')
+  ->add(\UsuarioMW::class. ':ValidarToken');  
+$app->get('/pedido/listaCandybar[/]', \PedidoProductoAPI::class . ':ListarPedidosCandybar') 
+  ->add(\UsuarioMW::class. ':ValidarRepostero')
+  ->add(\UsuarioMW::class. ':ValidarToken');
+
+//PedidoProducto
+$app->group('/pedidoproducto', function (RouteCollectorProxy $group) 
+{
+  //ABM
+  $group->post('/alta[/]', \PedidoProductoAPI::class . ':Alta'); 
+  $group->delete('/baja/{id}[/]', \PedidoProductoAPI::class . ':Baja'); 
+  $group->post('/modificacion[/]', \PedidoProductoAPI::class . ':Modificacion'); 
+})
+  ->add(\UsuarioMW::class. ':ValidarMozo')
+  ->add(\UsuarioMW::class. ':ValidarToken');
+
+//Manejo estados Pedido Producto
+$app->post('/pedido/enpreparacion[/]', \PedidoProductoAPI::class . ':PedidoEnPreparacion');
+$app->post('/pedido/listo[/]', \PedidoProductoAPI::class . ':PedidoListo'); 
+
+$app->post('/encuesta/nuevaEncuesta[/]', \EncuestaAPI::class . ':Alta'); 
+$app->post('/pdf/pdf[/]', \PedidoAPI::class . ':HacerPdf');
 
 $app->run();

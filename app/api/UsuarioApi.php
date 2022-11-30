@@ -1,148 +1,182 @@
 <?php
-require_once './models/Usuario.php';
-require_once './interfaces/IApiUsable.php';
-require_once './models/Logger.php';
-require_once './models/AutentificadorJWT.php';
+//require_once("Entidades/Usuario.php");
+include_once("Entidades/Usuario.php");
+include_once("token/Token.php");
 
-class UsuarioApi extends Usuario implements IApiUsable
+
+class UsuarioAPI
 {
-  public function CargarUno($request, $response, $args)
-  {
-    $ArrayDeParametros = $request->getParsedBody();
-    $arrayUsuario = $ArrayDeParametros['usuarioC'];
-        
-    $usuario = $arrayUsuario['usuario'];
-    $clave = $arrayUsuario['clave'];
-    $perfil = $arrayUsuario['perfil'];
-
-    // Creamos el usuario
-    $usr = new Usuario();
-    $usr->usuario = $usuario;
-    $usr->clave = $clave;
-    $usr->perfil = $perfil;
-    $usr->crearUsuario();
-
-    $payload = json_encode(array("mensaje" => "Usuario creado con exito"));
-
-    $response->getBody()->write($payload);
-    return $response
-      ->withHeader('Content-Type', 'application/json');
-  }
-
-  //Funcion para loguear usuario y crear token
-  public function LoguearUsuario($request, $response, $args)
-  {
-    $ArrayDeParametros = $request->getParsedBody();
-    $arrayUsuario = $ArrayDeParametros['usuario'];
-    $usuario = $arrayUsuario['usuario'];
-    $clave = $arrayUsuario['clave'];
-
-    $respuesta = Usuario::validarUsuario($usuario, $clave);
-
-    if ($respuesta) {
-      $ingreso = array("usuario" => $usuario, "clave" => $clave);
-      $token = AutentificadorJWT::CrearToken($ingreso);
-
-      if ($token == true) {
-        $payload = json_encode(array("mensaje" => "Authorization ok", "Token: " => $token, "status" => 200));
-      } else {
-        $payload = json_encode(array("mensaje" => "Error al crear el token", "status" => 400));
-      }
-    } else {
-      $payload = json_encode(array("mensaje" => "Error al validar el empleado", "status" => 400));
+    public function Alta($request, $response, $args)
+    {
+        try
+        {
+            $params = $request->getParsedBody();
+            //var_dump($params);
+            $usuario = new Usuario();
+            $usuario->dni = $params["dni"];
+            $usuario->clave = $params["clave"];
+            $usuario->tipo = $params["tipo"];
+            $alta = Usuario::Alta($usuario);
+            switch($alta)
+            {
+                case -1:
+                    $respuesta = "Problema generando el alta;";
+                    break;
+                case 0:
+                    $respuesta = "ERROR. No existe este tipo.";
+                    break;
+                case 1:
+                    $respuesta = "El usuario ya existía en la BD. Se ha pasado activo si no lo estaba y se ha actualizado la información.";
+                    break;
+                case 2:
+                    $respuesta = "Usuario creado con éxito.";
+                    break;
+                default:
+                    $respuesta = "Nunca llega al alta";
+            }    
+            $payload = json_encode($respuesta);
+            $response->getBody()->write($payload);
+            $newResponse = $response->withHeader('Content-Type', 'application/json');
+        }
+        catch(Throwable $mensaje)
+        {
+            printf("Error al dar de alta: <br> $mensaje .<br>");
+        }
+        finally
+        {
+            return $newResponse;
+        }
     }
-    $response->getBody()->write($payload);
-    return $response
-      ->withHeader('Content-Type', 'application/json');
-  }
 
-  public function TraerUno($request, $response, $args)
-  {
-    // Buscamos usuario por nombre
-    $usr = $args['usuario'];
-    $usuario = Usuario::obtenerUsuario($usr);
-    $payload = json_encode($usuario);
+    
+    public function Modificacion($request, $response, $args)
+    {
+        try
+        {
+            $params = $request->getParsedBody();
+            $usuario = new Usuario();
+            $usuario->id = $params["id"];
+            $usuario->tipo = $params["tipo"];
+            $usuario->dni = $params["dni"];
+            $usuario->clave = $params["clave"];
+            $modificacion = Usuario::Modificacion($usuario);
 
-    $response->getBody()->write($payload);
-    return $response
-      ->withHeader('Content-Type', 'application/json');
-  }
-
-  public function TraerTodos($request, $response, $args)
-  {
-    $lista = Usuario::obtenerTodos();
-    $payload = json_encode(array("listaUsuario" => $lista));
-    $response->getBody()->write($payload);
-    return $response
-      ->withHeader('Content-Type', 'application/json');
-  }
-
-  public function ModificarUno($request, $response, $args)
-  {
-    $parametros = $request->getParsedBody();
-    $id = $args['id'];
-    $ArrayDeParametros = $request->getParsedBody();
-    $arrayUsuario = $ArrayDeParametros['modificar'];
-
-    //Crear un nuevo usuario
-    $usr = new Usuario();
-    $usr->usuario = $arrayUsuario['usuario'];
-    $usr->clave = $arrayUsuario['clave'];
-    $usr->perfil = $arrayUsuario['perfil'];
-    $filasAfectadas = $usr->modificarUsuario($id);
-
-    if ($filasAfectadas > 0) {
-      $new_log = new Logger();
-      $new_log->idEmpleado =  $id;
-      $new_log->accion = "Usuario modificado";
-      $new_log->InsertarLog();
-
-      $payload = json_encode(array("mensaje" => "Usuario modificado con exito"));
-    } else {
-      $payload = json_encode(array("mensaje" => "Error al modificar el usuario"));
+            switch($modificacion)
+            {
+                case 1:
+                    $respuesta = "Usuario modificado con éxito.";
+                    break;
+                case 2:
+                    $respuesta = "El DNI ya existe en la base de datos.";
+                    break;
+                case 3:
+                    $respuesta = "Este ID no corresponde a ningún usuario";
+                    break;
+                default:
+                    $respuesta = "Nunca llega a la modificacion";
+            }    
+            $payload = json_encode($respuesta);
+            $response->getBody()->write($payload);
+            $newResponse = $response->withHeader('Content-Type', 'application/json');
+        }
+        catch(Throwable $mensaje)
+        {
+            printf("Error al modificar: <br> $mensaje .<br>");
+        }
+        finally
+        {
+            return $newResponse;
+        }
     }
-    $response->getBody()->write($payload);
-    return $response
-      ->withHeader('Content-Type', 'application/json');
-  }
 
-  public function BorrarUno($request, $response, $args)
-  {
-    $usuarioId = $args['id'];
-
-    $filasAfectadas = Usuario::darDeBajaUsuario($usuarioId);
-    if ($filasAfectadas > 0) {
-
-      $new_log = new Logger();
-      $new_log->idEmpleado =  $usuarioId;
-      $new_log->accion = "Usuario dado de baja";
-      $new_log->InsertarLog();
-
-      $payload = json_encode(array("<li>mensaje" => "Usuario dado de baja con exito", "status" => 200));
-    } else {
-      $payload = json_encode(array("<li>mensaje: " => "Error al eliminar el empleado", "status" => 400));
+    public function Baja($request, $response, $args)
+    {
+        try
+        {
+            //var_dump($args);
+            $idDelUsuario = $args["id"];
+            $modificacion = Usuario::Baja($idDelUsuario);
+            switch($modificacion)
+            {
+                case 0:
+                    $respuesta = "No existe este Usuario.";
+                    break;
+                case 1:
+                    $respuesta = "Usuario borrado con éxito.";
+                    break;
+                case 2:
+                    $respuesta = "No se puede borrar (Tiene pedidos pendientes).";
+                    break;
+                default:
+                    $respuesta = "Nunca llega a la modificacion";
+            }    
+            $payload = json_encode($respuesta);
+            $response->getBody()->write($payload);
+            $newResponse = $response->withHeader('Content-Type', 'application/json');
+        }
+        catch(Throwable $mensaje)
+        {
+            printf("Error al dar de baja: <br> $mensaje .<br>");
+        }
+        finally
+        {
+            return $newResponse;
+        }
     }
-    $response->getBody()->write($payload);
-    return $response->withHeader('Content-Type', 'application/json');
-  }
 
-  public function ActivarUno($request, $response, $args)
-  {
-    $usuarioId = $args['id'];
-
-    $filasAfectadas = Usuario::activarUsuario($usuarioId);
-    if ($filasAfectadas > 0) {
-
-      $new_log = new Logger();
-      $new_log->idEmpleado =  $usuarioId;
-      $new_log->accion = "Usuario reactivado";
-      $new_log->InsertarLog();
-
-      $payload = json_encode(array("<li>mensaje" => "Usuario reactivado con exito", "status" => 200));
-    } else {
-      $payload = json_encode(array("<li>mensaje: " => "Error al reactivar el usuario", "status" => 400));
+    public function Login($request, $response, $args)
+    {
+        try
+        {
+            $params = $request->getParsedBody();
+            $dni = $params["dni"];
+            $clave = $params["clave"];
+            $usuario = Usuario::Login($dni, $clave);
+            //var_dump($usuario);
+    
+            if($usuario != null)
+            {
+                $token = Token::GenerarToken($usuario->id, $usuario->tipo);
+                $respuesta = $token;
+                //$respuesta = "Usuario logueado con exito";
+            }
+            else
+            {
+                $respuesta = "Credenciales incorrectas.";
+            }
+    
+            $payload = json_encode($respuesta);
+            $response->getBody()->write($payload);
+            $newResponse = $response->withHeader('Content-Type', 'application/json');
+        }
+        catch(Throwable $mensaje)
+        {
+            printf("Error al loguearse: <br> $mensaje .<br>");
+        }
+        finally
+        {
+            return $newResponse;
+        }
     }
-    $response->getBody()->write($payload);
-    return $response->withHeader('Content-Type', 'application/json');
-  }
+
+    public function Listar($request, $response, $args)
+    {
+        try
+        {
+            $lista = AccesoDatos::ImprimirTabla('usuario', 'Usuario');
+            $payload = json_encode(array("listaUsuarios" => $lista));
+            $response->getBody()->write($payload);
+            $newResponse = $response->withHeader('Content-Type', 'application/json');
+        }
+        catch(Throwable $mensaje)
+        {
+            printf("Error al listar: <br> $mensaje .<br>");
+        }
+        finally
+        {
+            return $newResponse;
+        }    
+    }
 }
+
+?>

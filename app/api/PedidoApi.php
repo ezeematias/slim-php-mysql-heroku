@@ -1,128 +1,257 @@
 <?php
 
-use GuzzleHttp\Psr7\Response;
-use GuzzleHttp\Psr7\Request;
-use Slim\Handlers\Strategies\RequestHandler;
+include_once("Entidades/Cliente.php");
+include_once("Entidades/Pedido.php");
+include_once("Entidades/PDF.php");
 
-require_once './db/AccesoDatos.php';
-require_once "./models/Pedido.php";
-require_once "./models/ProductoConsumido.php";
-require_once "./interfaces/IApiUsable.php";
 
-class PedidoApi extends Pedido implements IApiUsable
+class PedidoAPI
 {
-//region ABM
-public function CargarUno($request, $response, $args)
-{
-    $ArrayDeParametros = $request->getParsedBody();
-    $arraypedidos = $ArrayDeParametros['pedido'];
-    $pedido = new Pedido();
-    $pedido->idComanda = $arraypedidos['idComanda'];
-    $pedido->sector = $arraypedidos['sector'];
-    $pedido->idEmpleado = $arraypedidos['idEmpleado'];
-    $pedido->descripcion = $arraypedidos['descripcion'];
-    $pedido->estado = $arraypedidos['estado'];
-    $pedido->fechaIngresado = $arraypedidos['fechaIngresado'];
-    $pedido->estimacion = $arraypedidos['estimacion'];
-    $pedido->codigo = $arraypedidos['codigo'];
-    $id =    $pedido->InsertarPedido();
-
-    if ($id) {
-        $new_log = new Logger();
-        $new_log->idEmpleado =  $ArrayDeParametros['empleado']['id'];
-        $new_log->accion = "Insertar pedido unia";
-        $new_log->InsertarLog();
-    }
-    $payload = json_encode(array("<li>mensaje: " => "", "status" => 200));
-    $response->getBody()->write($payload);
-    return $response->withHeader('Content-Type', 'application/json');    
-}
-
-    public function BorrarUno($request, $response, $args)
+    
+    public function Alta($request, $response, $args)
     {
-        $id = $args['id'];
-        $cantidadDeBorrados = Empleado::BorrarEmpleado($id);
-        if ($cantidadDeBorrados > 0) {
-            $new_log = new Logger();
-            $new_log->idEmpleado = $id;
-            $new_log->accion = "Borrar empleado";
-            $new_log->InsertarLog();
-            $payload = json_encode(array("<li>mensaje: " => "Empleado eliminado", "status" => 200));
-        } else {
-            $payload = json_encode(array("<li>mensaje: " => "Error al eliminar el empleado", "status" => 400));
-        }
-        $response->getBody()->write($payload);
-        return $response->withHeader('Content-Type', 'application/json');
-    }
-
-    public function ModificarUno($request, $response, $args)
-    {
-        $parametros = $request->getParsedBody();
-        $id = $args['id'];
-        $arraymodificar = $parametros['modificar'];
-
-        $miempleado = new Empleado();
-        $miempleado->estado = $arraymodificar['estado'];
-        $miempleado->sector = $arraymodificar['sector'];
-        $miempleado->puesto = $arraymodificar['puesto'];
-        $miempleado->fechaIngreso = $arraymodificar['fechaIngreso'];
-        $filasAfectadas = $miempleado->ModificarEmpleado($id);
-
-        if ($filasAfectadas > 0) {
-            $new_log = new Logger();
-            $new_log->idEmpleado = $id;
-            $new_log->accion = "Modificar empleados";
-            $new_log->InsertarLog();
-            $payload = json_encode(array("<li>mensaje: " => "Empleado modificado ", "status" => 200));
-        }
-
-        $response->getBody()->write($payload);
-        return $response->withHeader('Content-Type', 'application/json');
-    }
-
-    public function TraerUno($request, $response, $args)
-    {
-        $id = $args['id'];
-        $empleado = Empleado::TraerEmpleado($id);
-        $payload = json_encode(array("Empleado" => $empleado->toString()));
-        $response->getBody()->write($payload);
-        return $response->withHeader('Content-Type', 'application/json');
-    }
-
-    public function TraerTodos($request, $response, $args)
-    {
-        $lista = Pedido::TraerTodosLosPedidos();
-        Pedido::Listar($lista);
-        $payload = json_encode(array("mensaje: " => "Ok", "status" => 200));
-        $response->getBody()->write($payload);
-        return $response
-            ->withHeader('Content-Type', 'application/json');
-    }
-    //endregion ABM
-
-    //metricas empleado
-    public function MetricasPedidos($request, $response)
-    {
-        $empleado = Pedido::Metricas();
-
-        //Pedido::MostrarMetricas($empleado);
-        //	print_r($empleado);
-
-
-        //$payload = json_encode(($empleado));
-        $payload = json_encode("");
-        $response->getBody()->write($payload);
-        return $response
-        ->withHeader('Content-Type', 'application/json');
-    }
-
-    public static function MostrarMetricas($listaAnalytics)
-    {
-        foreach ($listaAnalytics as $key => $value) {
-            echo "<h1>$key</h1>";
-            foreach ($value as $obj) {
-                echo $obj->cantidad . " " . $obj->sector . "<br>";
+        try
+        {
+            $params = $request->getParsedBody();
+            //var_dump($params);
+            $cliente = new Cliente($params["cliente"]);
+            $pedido = new Pedido();
+            $pedido->id_mesa= $params["mesa"];
+            $pedido->id_cliente =  Cliente::Alta($cliente);
+            $pedido->id_usuario= $params["id_usuario"];
+            $pedido->fecha_prevista = $params["estara_en"];
+            $alta = Pedido::Alta($pedido);
+            switch($alta)
+            {
+                case '1':
+                    $respuesta = 'Pedido generado.';
+                    break;
+                case '0':
+                    $respuesta = 'No se generó el pedido pues la mesa está ocupada';
+                    break;   
+                case '2':
+                    $respuesta = 'Usuario inválido.';
+                    break;  
             }
+            $payload = json_encode($respuesta);
+            $response->getBody()->write($payload);
+            $newResponse = $response->withHeader('Content-Type', 'application/json');
+        }
+        catch(Throwable $mensaje)
+        {
+            printf("Error al dar de alta: <br> $mensaje .<br>");
+        }
+        finally
+        {
+            return $newResponse;
         }
     }
+
+
+    public function Baja($request, $response, $args)
+    {
+        try
+        {
+            //var_dump($args);
+            $idDelPedido = $args["id"];
+            $modificacion = Pedido::Baja($idDelPedido);
+            switch($modificacion)
+            {
+                case 0:
+                    $respuesta = "No existe este pedido.";
+                    break;
+                case 1:
+                    $respuesta = "Pedido borrado con éxito.";
+                    break;
+                default:
+                    $respuesta = "Nunca llega a la modificacion";
+            }    
+            $payload = json_encode($respuesta);
+            $response->getBody()->write($payload);
+            $newResponse = $response->withHeader('Content-Type', 'application/json');
+        }
+        catch(Throwable $mensaje)
+        {
+            printf("Error al dar de baja: <br> $mensaje .<br>");
+        }
+        finally
+        {
+            return $newResponse;
+        }
+    }
+
+    public function Modificacion($request, $response, $args)
+    {
+        try
+        {
+            $params = $request->getParsedBody();
+            $pedido = new Pedido();
+            $pedido->id = $params["idDelPedido"];
+            $pedido->id_mesa = $params["nuevaMesa"];
+            $pedido->id_usuario = $params["nuevoMozo"];
+            $modificacion = Pedido::Modificacion($pedido);
+            switch($modificacion)
+            {
+                case 0:
+                    $respuesta = "Este ID no corresponde a ningún pedido.";
+                    break;
+                case 1:
+                    $respuesta = "Mesa no disponible.";
+                    break;
+                case 2:
+                    $respuesta = "Pedido modificado con éxito.";
+                    break;
+                case 3:
+                    $respuesta = "No existe el empleado asignado.";
+                    break;
+                default:
+                    $respuesta = "Nunca llega a la modificacion";
+            }    
+            $payload = json_encode($respuesta);
+            $response->getBody()->write($payload);
+            $newResponse = $response->withHeader('Content-Type', 'application/json');
+        }
+        catch(Throwable $mensaje)
+        {
+            printf("Error al modifcar: <br> $mensaje .<br>");
+        }
+        finally
+        {
+            return $newResponse;
+        }
+    }
+
+
+    public function Listar($request, $response, $args)
+    {
+        try
+        {
+            $lista = AccesoDatos::ImprimirTabla('pedido', 'Pedido');
+            $payload = json_encode(array("listaPedidos" => $lista));
+            $response->getBody()->write($payload);
+            $newResponse = $response->withHeader('Content-Type', 'application/json');
+        }
+        catch(Throwable $mensaje)
+        {
+            printf("Error al listar: <br> $mensaje .<br>");
+        }
+        finally
+        {
+            return $newResponse;
+        }    
+    }
+
+    public function SubirFoto($request, $response, $args)
+    {
+        try
+        {
+            $params = $request->getParsedBody();
+            $pedido = new Pedido();
+            $pedido->id = $params["id"];
+            $archivo = ($_FILES["archivo"]);
+            $pedido->foto = ($archivo["tmp_name"]);
+            $pedido->GuardarImagen();
+            //var_dump($archivo);
+            $payload = json_encode("Carga exitosa.");
+            $response->getBody()->write($payload);
+            $newResponse = $response->withHeader('Content-Type', 'application/json');
+        }
+        catch(Throwable $mensaje)
+        {
+            printf("Error al listar: <br> $mensaje .<br>");
+        }
+        finally
+        {
+            return $newResponse;
+        }    
+    }
+
+    public function PasarAComiendo($request, $response, $args)
+    {
+        try
+        {           
+            $params = $request->getParsedBody();
+            $pedido = $params["pedido"];
+            Pedido::CambiarEstado($pedido, '2');
+            $payload = json_encode("En la mesa están comiendo.");
+            $response->getBody()->write($payload);
+            $newResponse = $response->withHeader('Content-Type', 'application/json');
+
+        }
+        catch(Throwable $mensaje)
+        {
+            printf("Error al cambia el estado: <br> $mensaje .<br>");
+        }
+        finally
+        {
+            return $newResponse;
+        }  
+    }
+
+    public function PasarAPagando($request, $response, $args)
+    {
+        try
+        {           
+            $params = $request->getParsedBody();
+            $pedido = $params["pedido"];
+            $respuesta = Pedido::CambiarEstado($pedido, '3');
+            $payload = json_encode("Pagando. La cuenta es: ".$respuesta);
+            $response->getBody()->write($payload);
+            $newResponse = $response->withHeader('Content-Type', 'application/json');
+
+        }
+        catch(Throwable $mensaje)
+        {
+            printf("Error al cambia el estado: <br> $mensaje .<br>");
+        }
+        finally
+        {
+            return $newResponse;
+        }  
+    }
+
+    public function CerrarPedido($request, $response, $args)
+    {
+        try
+        {           
+            $params = $request->getParsedBody();
+            $pedido = $params["pedido"];
+            Pedido::CambiarEstado($pedido, '4');
+            $payload = json_encode("Mesa cerrada.");
+            $response->getBody()->write($payload);
+            $newResponse = $response->withHeader('Content-Type', 'application/json');
+
+        }
+        catch(Throwable $mensaje)
+        {
+            printf("Error al cambia el estado: <br> $mensaje .<br>");
+        }
+        finally
+        {
+            return $newResponse;
+        }  
+    }
+
+    public function HacerPdf($request, $response, $args)
+    {
+        try
+        {
+            $params = $request->getParsedBody();
+            $pedido = $params["pedido"];
+            $lista = PDF::hacerPDF($pedido);
+            $payload = json_encode(array("listaPedidosCerrados" => $lista));
+            $response->getBody()->write($payload);
+            $newResponse = $response->withHeader('Content-Type', 'application/json');
+        }
+        catch(Throwable $mensaje)
+        {
+            printf("Error al listar: <br> $mensaje .<br>");
+        }
+        finally
+        {
+            return $newResponse;
+        }    
+    }
 }
+
+?>
