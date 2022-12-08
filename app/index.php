@@ -1,166 +1,186 @@
 <?php
-// Error Handling 
-// Commit
-error_reporting(-1);
-ini_set('display_errors', 1);      
 
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
-use Psr\Http\Server\RequestHandlerInterface;
 use Slim\Factory\AppFactory;
 use Slim\Routing\RouteCollectorProxy;
-use Slim\Routing\RouteContext;
 
 require __DIR__ . '/../vendor/autoload.php';
+require_once './db/AccesoDatos.php';
+require_once './JWT/AutentificadorJWT.php';
+require_once './middlewares/TokenMiddleware.php';
+require_once './middlewares/UsuarioMiddleware.php';
+require_once './API/TokenApi.php';
+require_once './API/UsuarioApi.php';
+require_once './API/ProductoApi.php';
+require_once './API/MesaApi.php';
+require_once './API/PedidoApi.php';
+require_once './API/ComandaApi.php';
+require_once './API/EncuestaApi.php';
+require_once './API/ExtrasApi.php';
 
-include_once './api/UsuarioAPI.php';
-include_once './api/ProductoAPI.php';
-include_once './api/MesaAPI.php';
-include_once './api/PedidoAPI.php';
-include_once './api/PedidoProductoAPI.php';
-include_once './api/EncuestaAPI.php';
-include_once './api/SectorAPI.php';
-include_once './api/TipoUsuarioAPI.php';
-include_once './api/ReportesAPI.php';
+// Load ENV
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
+$dotenv->safeLoad();
 
-
-include_once './db/AccesoDatos.php';
-include_once './middlewares/UsuarioMW.php';
-
-
-$dotenv = Dotenv\Dotenv::createImmutable(__DIR__); 
-
-$dotenv->load();
-
+// Instantiate App
 $app = AppFactory::create();
+
+// Set base path
+$app->setBasePath('/app');
+
+// Add error middleware
 $app->addErrorMiddleware(true, true, true);
 
-$app->get('[/]', function (Request $request, Response $response) {    
-  $response->getBody()->write("Comanda-PHP || Final");
+// Add parse body
+$app->addBodyParsingMiddleware();
+
+// Seteo Timezone
+date_default_timezone_set('America/Argentina/Buenos_Aires');
+
+// Error Handling
+error_reporting(-1);
+ini_set('display_errors', 1);
+error_reporting(E_ERROR | E_PARSE);
+
+// Routes
+$app->get('[/]', function (Request $request, Response $response) {
+  $response->getBody()->write("EZEQUIEL UNÍA - FINAL COMANDA");
   return $response;
-
 });
 
-$app->post('/empleados/login[/]', \UsuarioAPI::class . ':Login');  
+//CREACION DE TOKEN
+$app->get('/token', \TokenApi::class . ':ObtenerToken');
 
-//Sector
-$app->group('/sector', function (RouteCollectorProxy $group) 
-{
-  //ABM
-  $group->post('/alta[/]', \SectorAPI::class . ':Alta');
-  $group->post('/modificacion[/]', \SectorAPI::class . ':Modificacion');
-  $group->delete('/baja/{id}[/]', \SectorAPI::class . ':Baja');
-  $group->get('/lista[/]', \SectorAPI::class . ':Listar');  
+//LOGIN
+$app->group('/login', function (RouteCollectorProxy $group) {
+  $group->post('[/]', \UsuarioApi::class . ':LoginUsuario');
 });
 
-//Tipo de usuario
-$app->group('/tipousuario', function (RouteCollectorProxy $group) 
-{
-  //ABM
-  $group->post('/alta[/]', \TipoUsuarioAPI::class . ':Alta');
-  $group->post('/modificacion[/]', \TipoUsuarioAPI::class . ':Modificacion');
-  $group->delete('/baja/{id}[/]', \TipoUsuarioAPI::class . ':Baja');
-  $group->get('/lista[/]', \TipoUsuarioAPI::class . ':Listar'); 
-}); 
+//ABM USUARIOS
+$app->group('/usuarios', function (RouteCollectorProxy $group) {
+  $group->get('/listarTodos[/]', \UsuarioApi::class . ':TraerTodos');
+  $group->get('/listarPorTipo/{identificador}[/]', \UsuarioApi::class . ':TraerTodosPorTipo');
+  $group->get('/listarRegistros/{identificador}[/]', \UsuarioApi::class . ':TraerRegistroUsuarioPorId')->add(\UsuarioMiddleware::class . ':VerificarSocio'); // PUNTO 20
+  $group->get('/{identificador}[/]', \UsuarioApi::class . ':TraerUno');
+  $group->post('/crear[/]', \UsuarioApi::class . ':CargarUno');
+  $group->put('/modificar/{identificador}[/]', \UsuarioApi::class . ':ModificarUno');
+  $group->delete('/borrar/{identificador}[/]', \UsuarioApi::class . ':BorrarUno');
+})->add(\UsuarioMiddleware::class . ':VerificarSocio')
+  ->add(\TokenMiddleware::class . ':ValidarToken');
 
-//Mesa
-$app->group('/mesa', function (RouteCollectorProxy $group) 
-{
-  //ABM
-  $group->post('/alta[/]', \MesaAPI::class . ':Alta'); 
-  $group->delete('/baja/{id}[/]', \MesaAPI::class . ':Baja');
-  $group->post('/modificacion[/]', \MesaAPI::class . ':Modificacion'); 
-  $group->get('/lista[/]', \MesaAPI::class . ':Listar'); 
-  //Import/Export
-  $group->get('/export[/]', \MesaAPI::class . ':ExportarTabla');  
-  $group->post('/import[/]', \MesaAPI::class . ':ImportarTabla');  
-});
+//ABM PRODUCTOS
+$app->group('/productos', function (RouteCollectorProxy $group) {
+  $group->get('/listarTodos[/]', \ProductoApi::class . ':TraerTodos');
+  $group->get('/listarMasVendidos[/]', \ProductoApi::class . ':TraerTodosMasVendidos')->add(\UsuarioMiddleware::class . ':VerificarSocio'); // PUNTO 19
+  $group->get('/listarPorSector/{sector}[/]', \ProductoApi::class . ':TraerTodosPorSector');
+  $group->get('/{identificador}[/]', \ProductoApi::class . ':TraerUno');
+  $group->post('/crear[/]', \ProductoApi::class . ':CargarUno');
+  $group->put('/{identificador}[/]', \ProductoApi::class . ':ModificarUno');
+  $group->delete('/{identificador}[/]', \ProductoApi::class . ':BorrarUno');
+})->add(\TokenMiddleware::class . ':ValidarToken');
 
-//Usuarios
-$app->group('/empleados', function (RouteCollectorProxy $group) 
-{
-  //ABM
-  $group->post('/alta[/]', \UsuarioAPI::class . ':Alta');
-  $group->delete('/baja/{id}[/]', \UsuarioAPI::class . ':Baja');
-  $group->post('/modificacion[/]', \UsuarioAPI::class . ':Modificacion'); 
-  $group->get('/lista[/]', \UsuarioAPI::class . ':Listar');  
-});
+//ABM MESAS
+$app->group('/mesas', function (RouteCollectorProxy $group) {
+  $group->get('/listarTodos[/]', \MesaApi::class . ':TraerTodos');
+  $group->get('/listarMesas[/]', \MesaApi::class . ':TraerMesasFacturacion')->add(\UsuarioMiddleware::class . ':VerificarSocio'); //PUNTO 21.A
+  $group->get('/listarTodasMesas[/]', \MesaApi::class . ':TraerMesasTodaFacturacion')->add(\UsuarioMiddleware::class . ':VerificarSocio'); //PUNTO 21.B
+  $group->get('/listarPorEstado/{estado}[/]', \MesaApi::class . ':TraerTodosPorEstado');
+  $group->get('/{identificador}[/]', \MesaApi::class . ':TraerUno');
+  $group->get('/listarMesaFacturacionPorFecha/{mesa}[/]', \MesaApi::class . ':TraerMesaFacturacionPorFechas')->add(\UsuarioMiddleware::class . ':VerificarSocio'); // PUNTO 22.A
+  $group->get('/listarFacturacionPorFecha/todas[/]', \MesaApi::class . ':TraerFacturacionPorFechas')->add(\UsuarioMiddleware::class . ':VerificarSocio'); // PUNTO 22.B
+  $group->post('/crear[/]', \MesaApi::class . ':CargarUno');
+  $group->put('/{identificador}[/]', \MesaApi::class . ':ModificarUno');
+  $group->delete('/{identificador}[/]', \MesaApi::class . ':BorrarUno');
+})->add(\TokenMiddleware::class . ':ValidarToken');
 
-//Productos
-$app->group('/productos', function (RouteCollectorProxy $group) 
-{
-  $group->post('/alta[/]', \ProductoAPI::class . ':Alta'); 
-  $group->delete('/baja/{id}[/]', \ProductoAPI::class . ':Baja');
-  $group->post('/modificacion[/]', \ProductoAPI::class . ':Modificacion');  
-  $group->get('/lista[/]', \ProductoAPI::class . ':Listar');  
-});
+//FUNCIONALIDADES MESAS
+$app->group('/mesas', function (RouteCollectorProxy $group) {
+  $group->get('/verEstadoMesas/Socio[/]', \MesaApi::class . ':VerEstadoMesas')->add(\UsuarioMiddleware::class . ':VerificarSocio'); //PUNTO 8
+  $group->get('/verEstadoMesas/mesaMasUsada[/]', \MesaApi::class . ':TraerMesaMasUsada')->add(\UsuarioMiddleware::class . ':VerificarSocio'); //PUNTO 13
+  $group->put('/cerrarMesa/{identificador}[/]', \MesaApi::class . ':CerrarMesa')->add(\UsuarioMiddleware::class . ':VerificarSocio'); //PUNTO 10
+  $group->put('/liberarMesa/{identificador}[/]', \MesaApi::class . ':LiberarMesa')->add(\UsuarioMiddleware::class . ':VerificarMozo'); //PUNTO 10
+})->add(\TokenMiddleware::class . ':ValidarToken');
 
-//Reportes
-$app->group('/reportes', function (RouteCollectorProxy $group) 
-{
-  $group->get('/demorapedidoscerrados[/]', \ReportesAPI::class . ':DemoraPedidosCerrados');  
-  $group->get('/estadomesas[/]', \ReportesAPI::class . ':EstadoMesas');  
-  $group->get('/mejorescomentarios[/]', \ReportesAPI::class . ':MejoresComentarios');  
-  $group->get('/mesamasusada[/]', \ReportesAPI::class . ':MesaMasUsada'); 
-})
-  ->add(\UsuarioMW::class. ':ValidarSocio')
-  ->add(\UsuarioMW::class. ':ValidarToken');
-$app->post('/reportes/demorapedidomesa[/]', \ReportesAPI::class . ':DemoraPedidoMesa'); 
+//ABM PEDIDOS
+$app->group('/pedidos', function (RouteCollectorProxy $group) {
+  $group->get('/listarTodos[/]', \PedidoApi::class . ':TraerTodos');
+  $group->get('/listarPorEstado/{estado}[/]', \PedidoApi::class . ':TraerTodosPorEstado');
+  $group->get('/listarPorDemora/{demora}[/]', \PedidoApi::class . ':TraerTodosPorDemora')->add(\UsuarioMiddleware::class . ':VerificarSocio'); //PUNTOS 14 y 15
+  $group->post('/crear[/]', \PedidoApi::class . ':CargarUno')->add(\UsuarioMiddleware::class . ':VerificarMozo'); //PUNTO 1 
+  $group->get('/{identificador}[/]', \PedidoApi::class . ':TraerUno');
+  $group->put('/{identificador}', \PedidoApi::class . ':ModificarUno');
+  $group->delete('/{identificador}', \PedidoApi::class . ':BorrarUno');
+})->add(\TokenMiddleware::class . ':ValidarToken');
 
-//Pedido
-$app->group('/pedido', function (RouteCollectorProxy $group) 
-{
-  //ABM
-  $group->post('/alta[/]', \PedidoAPI::class . ':Alta');
-  $group->delete('/baja/{id}[/]', \PedidoAPI::class . ':Baja');
-  $group->post('/modificacion[/]', \PedidoAPI::class . ':Modificacion');
-  //Subir Foto
-  $group->post('/subirfoto[/]', \PedidoAPI::class . ':SubirFoto');
-  //Manejo del pedido
-  $group->get('/paraservir[/]', \ReportesAPI::class . ':PedidoProductoListoParaServir'); 
-  $group->post('/comiendo[/]', \PedidoAPI::class . ':PasarAComiendo'); 
-  $group->post('/pagando[/]', \PedidoAPI::class . ':PasarAPagando'); 
-})
-  ->add(\UsuarioMW::class. ':ValidarMozo')
-  ->add(\UsuarioMW::class. ':ValidarToken');
+//FUNCIONALIDADES PEDIDOS
+$app->group('/pedidos', function (RouteCollectorProxy $group) {
+  $group->post('/sacarFoto/{identificador}[/]', \PedidoApi::class . ':SacarFoto')->add(\UsuarioMiddleware::class . ':VerificarMozo'); //PUNTO 2
+  $group->get('/confirmarPedido/{identificador}[/]', \PedidoApi::class . ':ConfirmarPedido')->add(\UsuarioMiddleware::class . ':VerificarMozo'); //PUNTO 1
+  $group->post('/entregarPedido/{identificador}[/]', \PedidoApi::class . ':EntregarPedido')->add(\UsuarioMiddleware::class . ':VerificarMozo'); //PUNTO 7
+  $group->post('/cerrarPedido/{identificador}[/]', \PedidoApi::class . ':CerrarPedido')->add(\UsuarioMiddleware::class . ':VerificarMozo'); //PUNTO 9
+  $group->get('/verEstadoPedido/Cliente[/]', \PedidoApi::class . ':VerEstadoPedido'); //PUNTO 4
+  $group->get('/verEstadoPedido/Socio[/]', \PedidoApi::class . ':VerEstadoPedidos')->add(\UsuarioMiddleware::class . ':VerificarSocio'); //PUNTO 5
+  $group->get('/RealizarEncuesta/Cliente[/]', \PedidoApi::class . ':VerEstadoPedido'); //PUNTO 11
+})->add(\TokenMiddleware::class . ':ValidarToken');
 
-$app->get('/pedido/lista[/]', \PedidoAPI::class . ':Listar');
+//ABM COMANDAS
+$app->group('/comandas', function (RouteCollectorProxy $group) {
+  $group->get('/listarTodos[/]', \ComandaApi::class . ':TraerTodos');
+  $group->get('/listarTodosSectoresEmpleads[/]', \ComandaApi::class . ':TraerTodosSectoresEmpleados')->add(\UsuarioMiddleware::class . ':VerificarSocio'); //PUNTO 18
+  $group->get('/listarPorEstado/{estado}[/]', \ComandaApi::class . ':TraerTodosPorEstado');
+  $group->get('/{identificador}[/]', \ComandaApi::class . ':TraerUno');
+  $group->get('/operacionesPorSector/{identificador}[/]', \ComandaApi::class . ':TraerOperacionesPorSector')->add(\UsuarioMiddleware::class . ':VerificarSocio'); //PUNTO 17
+  $group->post('/crear[/]', \ComandaApi::class . ':CargarUno')->add(\UsuarioMiddleware::class . ':VerificarMozo'); //PUNTO 1
+  $group->put('/{identificador}', \ComandaApi::class . ':ModificarUno');
+  $group->delete('/{identificador}', \ComandaApi::class . ':BorrarUno');
+})->add(\TokenMiddleware::class . ':ValidarToken');
 
-//Cerrar pedido
-$app->post('/pedido/cerrar[/]', \PedidoAPI::class . ':CerrarPedido') 
-  ->add(\UsuarioMW::class. ':ValidarSocio')
-  ->add(\UsuarioMW::class. ':ValidarToken');
+//FUNCIONALIDADES COMANDAS
+$app->group('/comandas/administrar', function (RouteCollectorProxy $group) {
+  $group->get('/listarPendientes[/]', \ComandaApi::class . ':TraerPendientes')->add(\UsuarioMiddleware::class . ':ListarPedidos'); //PUNTO 3 
+  $group->put('/prepararPedido[/]', \ComandaApi::class . ':PrepararPedido')->add(\UsuarioMiddleware::class . ':AdministrarPedidos'); //PUNTO 3 
+  $group->get('/listarEnPreparacion[/]', \ComandaApi::class . ':TraerEnPreparacion')->add(\UsuarioMiddleware::class . ':ListarPedidos'); //PUNTO 6
+  $group->put('/entregarPedido[/]', \ComandaApi::class . ':EntregarPedido')->add(\UsuarioMiddleware::class . ':AdministrarPedidos'); //PUNTO 6
+})->add(\TokenMiddleware::class . ':ValidarToken');
 
-//Listado de pedidos activos
-$app->get('/pedido/listaBarra[/]', \PedidoProductoAPI::class . ':ListarPedidosBarra')
-  ->add(\UsuarioMW::class. ':ValidarBartender')
-  ->add(\UsuarioMW::class. ':ValidarToken');  
-$app->get('/pedido/listaChoperas[/]', \PedidoProductoAPI::class . ':ListarPedidosChoperas')
-  ->add(\UsuarioMW::class. ':ValidarCervecero')
-  ->add(\UsuarioMW::class. ':ValidarToken');;  
-$app->get('/pedido/listaCocina[/]', \PedidoProductoAPI::class . ':ListarPedidosCocina')
-  ->add(\UsuarioMW::class. ':ValidarCocinero')
-  ->add(\UsuarioMW::class. ':ValidarToken');  
-$app->get('/pedido/listaCandybar[/]', \PedidoProductoAPI::class . ':ListarPedidosCandybar') 
-  ->add(\UsuarioMW::class. ':ValidarRepostero')
-  ->add(\UsuarioMW::class. ':ValidarToken');
+//ENCUESTAS
+$app->group('/encuestas', function (RouteCollectorProxy $group) {
+  $group->post('/realizarEncuesta[/]', \EncuestaApi::class . ':CargarUno'); //PUNTO 11
+  $group->get('/verEncuestas[/]', \EncuestaApi::class . ':TraerTodos')->add(\UsuarioMiddleware::class . ':VerificarSocio'); //PUNTO 11
+  $group->get('/verMejoresComentarios[/]', \EncuestaApi::class . ':TraerMejores')->add(\UsuarioMiddleware::class . ':VerificarSocio'); //PUNTO 12
+})->add(\TokenMiddleware::class . ':ValidarToken');
 
-//PedidoProducto
-$app->group('/pedidoproducto', function (RouteCollectorProxy $group) 
-{
-  //ABM
-  $group->post('/alta[/]', \PedidoProductoAPI::class . ':Alta'); 
-  $group->delete('/baja/{id}[/]', \PedidoProductoAPI::class . ':Baja'); 
-  $group->post('/modificacion[/]', \PedidoProductoAPI::class . ':Modificacion'); 
-})
-  ->add(\UsuarioMW::class. ':ValidarMozo')
-  ->add(\UsuarioMW::class. ':ValidarToken');
+//EXTRAS
+$app->group('/extras', function (RouteCollectorProxy $group) {
+  $group->post('/cargarProductoCSV[/]', \ExtrasApi::class . ':CargarProductoCSV');
+  $group->get('/verComandasCSV[/]', \ExtrasApi::class . ':TraerComandasCSV');
+  $group->get('/verComandasPDF[/]', \ExtrasApi::class . ':TraerComandasPDF');
+  $group->get('/verLogoPDF[/]', \ExtrasApi::class . ':LogoPDF')->add(\UsuarioMiddleware::class . ':VerificarSocio'); //PUNTO 16
+})->add(\TokenMiddleware::class . ':ValidarToken');
 
-//Manejo estados Pedido Producto
-$app->post('/pedido/enpreparacion[/]', \PedidoProductoAPI::class . ':PedidoEnPreparacion');
-$app->post('/pedido/listo[/]', \PedidoProductoAPI::class . ':PedidoListo'); 
+//METRICAS
+$app->group('/metricas', function (RouteCollectorProxy $group) {
+  $group->get('/empleados/registros/{id}[/]', \UsuarioApi::class . ':TraerRegistroUsuarioPorIdFechas')->add(\UsuarioMiddleware::class . ':VerificarSocio'); //EMPLEADOS 1
+  $group->get('/empleados/operaciones/{id}[/]', \ComandaApi::class . ':TraerOperacionesPorSectorFechas')->add(\UsuarioMiddleware::class . ':VerificarSocio'); //EMPLEADOS 2
+  $group->get('/empleados/operaciones[/]', \ComandaApi::class . ':TraerTodosSectoresEmpleadosFechas')->add(\UsuarioMiddleware::class . ':VerificarSocio'); //EMPLEADOS 3
+  $group->get('/empleados/separados/{id}[/]', \ComandaApi::class . ':TraerOperacionesPorSeparadoFechas')->add(\UsuarioMiddleware::class . ':VerificarSocio'); //EMPLEADOS 4
+  $group->put('/empleados/suspender/{id}[/]', \UsuarioApi::class . ':SuspenderUno')->add(\UsuarioMiddleware::class . ':VerificarSocio'); //EMPLEADOS 5
 
-$app->post('/encuesta/nuevaEncuesta[/]', \EncuestaAPI::class . ':Alta'); 
-$app->post('/pdf/pdf[/]', \PedidoAPI::class . ':HacerPdf');
+  $group->get('/pedidos/masVendidos[/]', \ProductoApi::class . ':TraerTodosMasVendidosFechas')->add(\UsuarioMiddleware::class . ':VerificarSocio'); // PEDIDOS 1
+  $group->get('/pedidos/menosVendidos[/]', \ProductoApi::class . ':TraerTodosMenosVendidosFechas')->add(\UsuarioMiddleware::class . ':VerificarSocio'); // PEDIDOS 2
+  $group->get('/pedidos/demorados/{demora}[/]', \PedidoApi::class . ':TraerTodosPorDemoraFechas')->add(\UsuarioMiddleware::class . ':VerificarSocio'); // PEDIDOS 3
+  $group->get('/pedidos/cancelados[/]', \PedidoApi::class . ':TraerTodosCanceladosFechas')->add(\UsuarioMiddleware::class . ':VerificarSocio'); // PEDIDOS 4
+
+  $group->get('/mesas/masUsadas[/]', \MesaApi::class . ':TraerMesaUsadaFechas')->add(\UsuarioMiddleware::class . ':VerificarSocio'); // MESA 1
+  $group->get('/mesas/menosUsadas[/]', \MesaApi::class . ':TraerMesaMenosUsadaFechas')->add(\UsuarioMiddleware::class . ':VerificarSocio'); // MESA 2
+  $group->get('/mesas/masFacturacion[/]', \MesaApi::class . ':TraerMesaConMasFacturacionFechas')->add(\UsuarioMiddleware::class . ':VerificarSocio');// MESA 3
+  $group->get('/mesas/menosFacturacion[/]', \MesaApi::class . ':TraerMesaConMenosFacturacionFechas')->add(\UsuarioMiddleware::class . ':VerificarSocio');// MESA 4
+  $group->get('/mesas/mayorFactura[/]', \MesaApi::class . ':TraerMesaFacturaMayorPorFechas')->add(\UsuarioMiddleware::class . ':VerificarSocio');// MESA 5
+  $group->get('/mesas/menorFactura[/]', \MesaApi::class . ':TraerMesaFacturaMenorPorFechas')->add(\UsuarioMiddleware::class . ':VerificarSocio');// MESA 6
+  $group->get('/mesas/facturacion[/]', \MesaApi::class . ':TraerFacturacionFechas')->add(\UsuarioMiddleware::class . ':VerificarSocio');// MESA 7
+  $group->get('/mesas/mejoresComentarios[/]', \EncuestaApi::class . ':TraerMejoresFechas')->add(\UsuarioMiddleware::class . ':VerificarSocio'); // MESA 8
+  $group->get('/mesas/peoresComentarios[/]', \EncuestaApi::class . ':TraerPeoresFechas')->add(\UsuarioMiddleware::class . ':VerificarSocio'); // MESA 9
+})->add(\TokenMiddleware::class . ':ValidarToken');
 
 $app->run();

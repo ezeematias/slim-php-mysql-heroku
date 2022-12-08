@@ -1,0 +1,51 @@
+[
+    [
+        {
+            "Id": 1,
+            "CodigoPedido": "eo2ev",
+            "CodigoMesa": "me001",
+            "Cliente": "Gonzalo",
+            "Producto": "Milanesa a Caballo",
+            "Cantidad": 1,
+            "SectorElaboracion": "COCINA"
+        }
+    ],
+    [
+        {
+            "Id": 1,
+            "CodigoPedido": "l0ydc",
+            "CodigoMesa": "me001",
+            "Cliente": "Gonzalo",
+            "Producto": "Milanesa a Caballo",
+            "Cantidad": 1,
+            "SectorElaboracion": "COCINA"
+        },
+        {
+            "Id": 2,
+            "CodigoPedido": "l0ydc",
+            "CodigoMesa": "me001",
+            "Cliente": "Gonzalo",
+            "Producto": "Hamburguesa de Garbanzo",
+            "Cantidad": 2,
+            "SectorElaboracion": "COCINA"
+        },
+        {
+            "Id": 3,
+            "CodigoPedido": "l0ydc",
+            "CodigoMesa": "me001",
+            "Cliente": "Gonzalo",
+            "Producto": "Cerveza Corona",
+            "Cantidad": 1,
+            "SectorElaboracion": "CHOPERIA"
+        },
+        {
+            "Id": 4,
+            "CodigoPedido": "l0ydc",
+            "CodigoMesa": "me001",
+            "Cliente": "Gonzalo",
+            "Producto": "Daikiri",
+            "Cantidad": 1,
+            "SectorElaboracion": "BARRA"
+        }
+    ]
+]

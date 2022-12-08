@@ -1,143 +1,199 @@
 <?php
-include_once("Entidades/Producto.php");
 
-class ProductoAPI
+require_once './models/Producto.php';
+require_once './interfaces/IApiUsable.php';
+
+class ProductoApi extends Producto implements IApiUsable
 {
-    public function Alta($request, $response, $args)
-    {  
-        try
-        {
-            $params = $request->getParsedBody();
-            //var_dump($params);
-            $producto = new Producto();
-            $producto->id_sector = $params["sector"];
-            $producto->nombre= $params["nombre"];
-            $producto->precio= $params["precio"];
-            $alta = Producto::Alta($producto);
-            switch($alta)
-            {
-                case -1:
-                    $respuesta = "Problema generando el alta.";
-                    break;
-                case 0:
-                    $respuesta = "ERROR. No existe este sector.";
-                    break;
-                case 1:
-                    $respuesta = "El producto ya existía en la BD. Se ha pasado activo si no lo estaba y se ha actualizado la información.";
-                    break;
-                case 2:
-                    $respuesta = "Producto creado con éxito.";
-                    break;
-                default:
-                    $respuesta = "Nunca llega al alta";
-            }
-    
-            $payload = json_encode($respuesta);
-            $response->getBody()->write($payload);
-            $newResponse = $response->withHeader('Content-Type', 'application/json');
-
-        }
-        catch(Throwable $mensaje)
-        {
-            printf("Error al dar de alta: <br> $mensaje .<br>");
-        }
-        finally
-        {
-            return $newResponse;
-        }
-    }
-
-    public function Baja($request, $response, $args)
+    public function TraerTodos($request, $response, $args)
     {
-        try
-        {
-            //var_dump($args);
-            $idDelProducto = $args["id"];
-            $modificacion = Producto::Baja($idDelProducto);
-            switch($modificacion)
-            {
-                case 0:
-                    $respuesta = "No existe este producto.";
-                    break;
-                case 1:
-                    $respuesta = "Producto borrado con éxito.";
-                    break;
-                default:
-                    $respuesta = "Nunca llega a la baja";
-            }    
-            $payload = json_encode($respuesta);
+        $productos = Producto::MostrarProductos();
+        if (count($productos) > 0) {
+            $payload = json_encode(array("Lista: " => $productos));
             $response->getBody()->write($payload);
-            $newResponse = $response->withHeader('Content-Type', 'application/json');
+            $newResponse = $response->withStatus(200);
+        } else {
+            $payload = json_encode(array("mensaje" => "NO EXISTEN PRODUCTOS"));
+            $response->getBody()->write($payload);
+            $newResponse = $response->withStatus(404);
         }
-        catch(Throwable $mensaje)
-        {
-            printf("Error al dar de baja: <br> $mensaje .<br>");
-        }
-        finally
-        {
-            return $newResponse;
-        }
+
+        return $newResponse
+            ->withHeader('Content-Type', 'application/json');
     }
 
-    public function Modificacion($request, $response, $args)
+    public function TraerTodosMasVendidos($request, $response, $args)
     {
-        try
-        {
-            $params = $request->getParsedBody();
-            $producto = new Producto();
-            $producto->id = $params["idDelProducto"];
-            $producto->id_sector = $params["idDelSector"];
-            $producto->nombre = $params["nuevoNombre"];
-            $producto->precio = $params["nuevoPrecio"];
-   
-            $modificacion = Producto::Modificacion($producto);
-            switch($modificacion)
-            {
-                case 3:
-                    $respuesta = "El id introducido no existe.";
-                    break;
-                case 2:
-                    $respuesta = "El nombre ya existe.";
-                    break;
-                case 1:
-                    $respuesta = "Producto modificado con éxito.";
-                    break;
-                default:
-                    $respuesta = "Nunca llega a la modificacion.";
-            }    
-            $payload = json_encode($respuesta);
+        $productos = Producto::MostrarProductosMasVendidos();
+        if (count($productos) > 0) {
+            $payload = json_encode(array("Productos Más Vendidos: " => $productos));
             $response->getBody()->write($payload);
-            $newResponse = $response->withHeader('Content-Type', 'application/json');
+            $newResponse = $response->withStatus(200);
+        } else {
+            $payload = json_encode(array("mensaje" => "NO EXISTEN PRODUCTOS"));
+            $response->getBody()->write($payload);
+            $newResponse = $response->withStatus(404);
         }
-        catch(Throwable $mensaje)
-        {
-            printf("Error al modifcar: <br> $mensaje .<br>");
-        }
-        finally
-        {
-            return $newResponse;
-        }
+
+        return $newResponse
+            ->withHeader('Content-Type', 'application/json');
     }
 
-    public function Listar($request, $response, $args)
+    public function TraerTodosMasVendidosFechas($request, $response, $args)
     {
-        try
-        {
-            $lista = AccesoDatos::ImprimirTabla('producto', 'Producto');
-            $payload = json_encode(array("listaProductos" => $lista));
+        $parametros = $request->getParsedBody();
+        $desde = $parametros['desde'];
+        $hasta = $parametros['hasta'];
+        $productos = Producto::MostrarProductosMasVendidosFechas($desde, $hasta);
+        if (count($productos) > 0) {
+            $payload = json_encode(array("Productos Más Vendidos: " => $productos));
             $response->getBody()->write($payload);
-            $newResponse = $response->withHeader('Content-Type', 'application/json');
+            $newResponse = $response->withStatus(200);
+        } else {
+            $payload = json_encode(array("mensaje" => "NO EXISTEN PRODUCTOS"));
+            $response->getBody()->write($payload);
+            $newResponse = $response->withStatus(404);
         }
-        catch(Throwable $mensaje)
-        {
-            printf("Error al listar: <br> $mensaje .<br>");
+
+        return $newResponse
+            ->withHeader('Content-Type', 'application/json');
+    }
+    public function TraerTodosMenosVendidosFechas($request, $response, $args)
+    {
+        $parametros = $request->getParsedBody();
+        $desde = $parametros['desde'];
+        $hasta = $parametros['hasta'];
+        $productos = Producto::MostrarProductosMenosVendidosFechas($desde, $hasta);
+        if (count($productos) > 0) {
+            $payload = json_encode(array("Productos Más Vendidos: " => $productos));
+            $response->getBody()->write($payload);
+            $newResponse = $response->withStatus(200);
+        } else {
+            $payload = json_encode(array("mensaje" => "NO EXISTEN PRODUCTOS"));
+            $response->getBody()->write($payload);
+            $newResponse = $response->withStatus(404);
         }
-        finally
-        {
-            return $newResponse;
-        }    
+
+        return $newResponse
+            ->withHeader('Content-Type', 'application/json');
     }
 
+    public function TraerTodosPorSector($request, $response, $args)
+    {
+        $sector = $args['sector'];
+        $lista = Producto::ObtenerPorSector($sector);
+        if (count($lista) > 0) {
+            $payload = json_encode(array("Lista: " => $lista));
+            $response->getBody()->write($payload);
+            $newResponse = $response->withStatus(200);
+
+        } else {
+            $payload = json_encode(array("mensaje" => "NO EXISTEN PRODUCTOS DEL SECTOR INDICADO"));
+            $response->getBody()->write($payload);
+            $newResponse = $response->withStatus(404);
+        }
+
+        return $newResponse
+            ->withHeader('Content-Type', 'application/json');
+    }
+
+    public function TraerUno($request, $response, $args)
+    {
+        $id = $args['identificador'];
+        $usuario = Producto::ObtenerPorId($id);
+
+        if ($usuario != null) {
+            $payload = json_encode(array("Producto: " => $usuario));
+            $response->getBody()->write($payload);
+            $newResponse = $response->withStatus(200);
+        } else {
+            $payload = json_encode(array("mensaje" => "PRODUCTO NO ENCONTRADO"));
+            $response->getBody()->write($payload);
+            $newResponse = $response->withStatus(404);
+        }
+
+        return $newResponse
+            ->withHeader('Content-Type', 'application/json');
+    }
+
+    public function CargarUno($request, $response, $args)
+    {
+        $parametros = $request->getParsedBody();
+
+        $nombre = $parametros['nombre'];
+        $precio = $parametros['precio'];
+        $id_sector = $parametros['id_sector'];
+        $tiempo_preparacion = $parametros['tiempo_preparacion'];
+
+        $producto = new Producto();
+        $producto->nombre = $nombre;
+        $producto->precio = $precio;
+        $producto->id_sector = $id_sector;
+        $producto->tiempo_preparacion = $tiempo_preparacion;
+
+        $retorno = $producto->CrearProducto();
+
+        if ($retorno == true) {
+            $payload = json_encode(array("mensaje" => "Producto creado con exito"));
+            $response->getBody()->write($payload);
+            $newResponse = $response->withStatus(201);
+
+        } else {
+            $payload = json_encode(array("mensaje" => "ERROR AL CREAR EL PRODUCTO"));
+            $response->getBody()->write($payload);
+            $newResponse = $response->withStatus(400);
+        }
+
+        return $newResponse
+            ->withHeader('Content-Type', 'application/json');
+    }
+
+    public function BorrarUno($request, $response, $args)
+    {
+        $productoModificar = $args['identificador'];
+        $producto = Producto::ObtenerPorId($productoModificar);
+
+        if ($producto != null) {
+            Producto::CambiarEstadoProducto($producto->id_producto, 0);
+            $payload = json_encode(array("mensaje" => "Producto borrado con exito"));
+            $response->getBody()->write($payload);
+            $newResponse = $response->withStatus(200);
+        } else {
+            $payload = json_encode(array("mensaje" => "PRODUCTO INEXISTENTE"));
+            $response->getBody()->write($payload);
+            $newResponse = $response->withStatus(404);
+        }
+
+        return $newResponse
+            ->withHeader('Content-Type', 'application/json');
+    }
+
+    public function ModificarUno($request, $response, $args)
+    {
+        $parametros = $request->getParsedBody();
+        $productoModificar = $args['identificador'];
+        $nombre = $parametros['nombre'];
+        $precio = $parametros['precio'];
+        $id_sector = $parametros['id_sector'];
+        $tiempo_preparacion = $parametros['tiempo_preparacion'];
+        $producto = Producto::ObtenerPorId($productoModificar);
+
+        if ($producto != null) {
+            $producto->nombre = $nombre;
+            $producto->precio = $precio;
+            $producto->id_sector = $id_sector;
+            $producto->tiempo_preparacion = $tiempo_preparacion;
+            Producto::ModificarProducto($producto);
+            $payload = json_encode(array("mensaje" => "Producto modificado con exito"));
+            $response->getBody()->write($payload);
+            $newResponse = $response->withStatus(200);
+        } else {
+            $payload = json_encode(array("mensaje" => "PRODUCTO INEXISTENTE"));
+            $response->getBody()->write($payload);
+            $newResponse = $response->withStatus(404);
+        }
+
+        return $newResponse
+            ->withHeader('Content-Type', 'application/json');
+    }
 }
-
-?>
