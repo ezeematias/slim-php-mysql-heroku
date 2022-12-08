@@ -1,0 +1,39 @@
+{
+	"id": "2321817c-f7dc-4d1f-bdda-c56d2d484b3d",
+	"name": "Token",
+	"values": [
+		{
+			"key": "access_token",
+			"value": "",
+			"type": "default",
+			"enabled": false
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "login-token",
+			"value": "",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "codigo_pedido",
+			"value": "",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "codigo_mesa",
+			"value": "",
+			"type": "default",
+			"enabled": true
+		}
+	],
+	"_postman_variable_scope": "environment",
+	"_postman_exported_at": "2022-12-08T20:25:56.775Z",
+	"_postman_exported_using": "Postman/10.5.8"
+}
